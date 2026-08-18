@@ -1,2043 +1,1820 @@
 "use client";
 
-import {
-  Activity,
-  Bell,
-  Check,
-  ChevronRight,
-  Edit3,
-  Eye,
-  ExternalLink,
-  FileText,
-  Image as ImageIcon,
-  LayoutDashboard,
-  Link as LinkIcon,
-  LogOut,
-  Menu,
-  MessageCircle,
-  Music,
-  Plus,
-  Save,
-  Settings,
-  Shield,
-  Trash2,
-  Upload,
-  Video,
-  X,
-  Youtube,
-  Instagram,
-  Send,
-  Github,
-} from "lucide-react";
+import { useState } from "react";
 
-import { useEffect, useState } from "react";
-
-type Social = {
-  id: number;
-  name: string;
-  username: string;
-  url: string;
-  enabled: boolean;
-};
-
-type Project = {
-  id: number;
-  title: string;
-  description: string;
-  url: string;
-};
-
-type Update = {
-  id: number;
-  title: string;
-  text: string;
-  date: string;
-};
-
-type SiteData = {
-  name: string;
-  role: string;
-  about: string;
-  profile: string;
-  background: string;
-  music: string;
-  musicTitle: string;
-  musicArtist: string;
-  socials: Social[];
-  projects: Project[];
-  updates: Update[];
-};
-
-const defaultData: SiteData = {
-  name: "VEXDOU",
-  role: "Creator · Developer · Builder",
-
-  about:
-    "I'm passionate about technology, digital products, creative projects and building experiences that people actually enjoy using.",
-
-  profile: "/profile.jpg",
-  background: "/background.mp4",
-  music: "/music.mp3",
-
-  musicTitle: "VEXDOU Music",
-  musicArtist: "My Favorite Track",
-
-  socials: [
-    {
-      id: 1,
-      name: "TikTok",
-      username: "@vexdou",
-      url: "https://www.tiktok.com/@vexdou",
-      enabled: true,
-    },
-    {
-      id: 2,
-      name: "Instagram",
-      username: "@vexdou",
-      url: "https://instagram.com/vexdou",
-      enabled: true,
-    },
-    {
-      id: 3,
-      name: "WhatsApp",
-      username: "Message me",
-      url: "https://wa.me/",
-      enabled: true,
-    },
-    {
-      id: 4,
-      name: "Telegram",
-      username: "@vexdou",
-      url: "https://t.me/vexdou",
-      enabled: true,
-    },
-    {
-      id: 5,
-      name: "YouTube",
-      username: "VEXDOU",
-      url: "https://youtube.com/",
-      enabled: true,
-    },
-    {
-      id: 6,
-      name: "GitHub",
-      username: "vexdou",
-      url: "https://github.com/vexdou",
-      enabled: true,
-    },
-  ],
-
-  projects: [
-    {
-      id: 1,
-      title: "VEXDOU Platform",
-      description:
-        "My personal digital platform for projects, media, social links and updates.",
-      url: "#",
-    },
-    {
-      id: 2,
-      title: "ORPIT-PAY",
-      description:
-        "A modern digital SaaS platform currently being developed.",
-      url: "#",
-    },
-  ],
-
-  updates: [
-    {
-      id: 1,
-      title: "Welcome to VEXDOU",
-      text:
-        "The new VEXDOU digital platform is now live.",
-      date: "2026-08-18",
-    },
-  ],
-};
-
-const menuItems = [
-  {
-    id: "dashboard",
-    name: "Dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    id: "profile",
-    name: "Profile",
-    icon: Shield,
-  },
-  {
-    id: "socials",
-    name: "Social Platforms",
-    icon: LinkIcon,
-  },
-  {
-    id: "media",
-    name: "Media",
-    icon: ImageIcon,
-  },
-  {
-    id: "music",
-    name: "Music",
-    icon: Music,
-  },
-  {
-    id: "projects",
-    name: "Projects",
-    icon: Activity,
-  },
-  {
-    id: "updates",
-    name: "Updates",
-    icon: FileText,
-  },
-  {
-    id: "notifications",
-    name: "Notifications",
-    icon: Bell,
-  },
-  {
-    id: "settings",
-    name: "Settings",
-    icon: Settings,
-  },
-];
+const ADMIN_PASSWORD = "VEXDOU2026@";
 
 export default function AdminPage() {
-  const [data, setData] = useState<SiteData>(defaultData);
-
-  const [active, setActive] = useState("dashboard");
-
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  const [saved, setSaved] = useState(false);
-
-  const [login, setLogin] = useState(false);
-
+  const [loggedIn, setLoggedIn] = useState(false);
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
 
-  const [notification, setNotification] = useState("");
+  const [active, setActive] = useState("Overview");
 
-  const [newSocial, setNewSocial] = useState({
-    name: "",
-    username: "",
-    url: "",
-  });
-
-  const [newProject, setNewProject] = useState({
-    title: "",
-    description: "",
-    url: "",
-  });
-
-  const [newUpdate, setNewUpdate] = useState({
-    title: "",
-    text: "",
-  });
-
-  useEffect(() => {
-    const savedData = localStorage.getItem("vexdou-site-data");
-
-    if (savedData) {
-      try {
-        setData(JSON.parse(savedData));
-      } catch {
-        setData(defaultData);
-      }
-    }
-  }, []);
-
-  function saveData() {
-    localStorage.setItem(
-      "vexdou-site-data",
-      JSON.stringify(data)
-    );
-
-    setSaved(true);
-
-    setTimeout(() => {
-      setSaved(false);
-    }, 2000);
-  }
-
-  function updateData<K extends keyof SiteData>(
-    key: K,
-    value: SiteData[K]
-  ) {
-    setData((previous) => ({
-      ...previous,
-      [key]: value,
-    }));
-  }
-
-  function addSocial() {
-    if (
-      !newSocial.name ||
-      !newSocial.username ||
-      !newSocial.url
-    ) {
+  const login = () => {
+    if (password === ADMIN_PASSWORD) {
+      setLoggedIn(true);
+      setError("");
       return;
     }
 
-    const social: Social = {
-      id: Date.now(),
-      name: newSocial.name,
-      username: newSocial.username,
-      url: newSocial.url,
-      enabled: true,
-    };
+    setError("Incorrect password. Please try again.");
+  };
 
-    updateData("socials", [
-      ...data.socials,
-      social,
-    ]);
-
-    setNewSocial({
-      name: "",
-      username: "",
-      url: "",
-    });
-  }
-
-  function deleteSocial(id: number) {
-    updateData(
-      "socials",
-      data.socials.filter(
-        (social) => social.id !== id
-      )
-    );
-  }
-
-  function toggleSocial(id: number) {
-    updateData(
-      "socials",
-      data.socials.map((social) =>
-        social.id === id
-          ? {
-              ...social,
-              enabled: !social.enabled,
-            }
-          : social
-      )
-    );
-  }
-
-  function addProject() {
-    if (
-      !newProject.title ||
-      !newProject.description
-    ) {
-      return;
-    }
-
-    const project: Project = {
-      id: Date.now(),
-      title: newProject.title,
-      description: newProject.description,
-      url: newProject.url || "#",
-    };
-
-    updateData("projects", [
-      ...data.projects,
-      project,
-    ]);
-
-    setNewProject({
-      title: "",
-      description: "",
-      url: "",
-    });
-  }
-
-  function deleteProject(id: number) {
-    updateData(
-      "projects",
-      data.projects.filter(
-        (project) => project.id !== id
-      )
-    );
-  }
-
-  function addUpdate() {
-    if (
-      !newUpdate.title ||
-      !newUpdate.text
-    ) {
-      return;
-    }
-
-    const update: Update = {
-      id: Date.now(),
-      title: newUpdate.title,
-      text: newUpdate.text,
-      date: new Date()
-        .toISOString()
-        .split("T")[0],
-    };
-
-    updateData("updates", [
-      update,
-      ...data.updates,
-    ]);
-
-    setNewUpdate({
-      title: "",
-      text: "",
-    });
-  }
-
-  function deleteUpdate(id: number) {
-    updateData(
-      "updates",
-      data.updates.filter(
-        (item) => item.id !== id
-      )
-    );
-  }
-
-  function showNotification(message: string) {
-    setNotification(message);
-
-    setTimeout(() => {
-      setNotification("");
-    }, 3000);
-  }
-
-  function handleLogin() {
-    if (password === "VEXDOU2026") {
-      setLogin(true);
-      setPassword("");
-    } else {
-      showNotification("Wrong admin password");
-    }
-  }
-
-  if (!login) {
+  if (!loggedIn) {
     return (
-      <main className="min-h-screen bg-[#05060a] text-white">
+      <main className="admin-login-page">
+        <div className="admin-glow glow-one" />
+        <div className="admin-glow glow-two" />
 
-        <div className="fixed inset-0 overflow-hidden">
+        <div className="login-card">
+          <div className="login-logo">V</div>
 
-          <div className="absolute left-1/2 top-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-600/15 blur-[150px]" />
-
-        </div>
-
-        <div className="relative flex min-h-screen items-center justify-center px-5">
-
-          <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/[.04] p-8 backdrop-blur-2xl">
-
-            <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-violet-600 to-cyan-400 text-2xl font-black">
-              V
-            </div>
-
-            <h1 className="mt-6 text-center text-3xl font-black">
-              VEXDOU ADMIN
-            </h1>
-
-            <p className="mt-2 text-center text-xs text-white/40">
-              Secure control panel
-            </p>
-
-            <div className="mt-8">
-
-              <label className="mb-2 block text-xs text-white/50">
-                Admin Password
-              </label>
-
-              <input
-                type="password"
-                value={password}
-                onChange={(e) =>
-                  setPassword(e.target.value)
-                }
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleLogin();
-                  }
-                }}
-                placeholder="Enter password"
-                className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none transition focus:border-violet-500"
-              />
-
-            </div>
-
-            <button
-              onClick={handleLogin}
-              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-white py-3 text-sm font-bold text-black transition hover:bg-white/90"
-            >
-              <Shield size={17} />
-              Enter Admin Panel
-            </button>
-
-            <p className="mt-5 text-center text-[10px] text-white/25">
-              VEXDOU secure dashboard
-            </p>
-
+          <div className="login-small">
+            VEXDOU ADMIN PANEL
           </div>
 
-        </div>
+          <h1>Welcome back.</h1>
 
+          <p>
+            Enter your administrator password to
+            access your dashboard.
+          </p>
+
+          <div className="password-box">
+            <input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setError("");
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") login();
+              }}
+              placeholder="Enter password"
+            />
+
+            <button
+              type="button"
+              onClick={() =>
+                setShowPassword(!showPassword)
+              }
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
+          </div>
+
+          {error && (
+            <div className="login-error">
+              ⚠ {error}
+            </div>
+          )}
+
+          <button
+            className="login-button"
+            onClick={login}
+          >
+            LOGIN
+            <span>→</span>
+          </button>
+
+          <a href="/" className="back-home">
+            ← Back to website
+          </a>
+        </div>
       </main>
     );
   }
 
+  const menu = [
+    "Overview",
+    "Content",
+    "Social Links",
+    "Media",
+    "Notifications",
+    "Settings",
+  ];
+
   return (
-    <main className="min-h-screen bg-[#05060a] text-white">
-
-      {/* MOBILE OVERLAY */}
-
-      {sidebarOpen && (
-        <button
-          aria-label="Close menu"
-          onClick={() => setSidebarOpen(false)}
-          className="fixed inset-0 z-40 bg-black/70 lg:hidden"
-        />
-      )}
+    <main className="dashboard">
 
       {/* SIDEBAR */}
 
-      <aside
-        className={`fixed left-0 top-0 z-50 h-screen w-72 border-r border-white/10 bg-[#08090e] transition-transform duration-300 ${
-          sidebarOpen
-            ? "translate-x-0"
-            : "-translate-x-full lg:translate-x-0"
-        }`}
-      >
+      <aside className="sidebar">
 
-        <div className="flex h-20 items-center justify-between border-b border-white/10 px-6">
+        <div className="brand">
+          <div className="brand-icon">V</div>
 
-          <div className="flex items-center gap-3">
-
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-violet-600 to-cyan-400 font-black">
-              V
-            </div>
-
-            <div>
-
-              <div className="text-sm font-black tracking-[2px]">
-                VEXDOU
-              </div>
-
-              <div className="text-[8px] tracking-[2px] text-white/30">
-                ADMIN PANEL
-              </div>
-
-            </div>
-
+          <div>
+            <strong>VEXDOU</strong>
+            <small>ADMIN PANEL</small>
           </div>
-
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="lg:hidden"
-          >
-            <X size={19} />
-          </button>
-
         </div>
 
-
-        <div className="px-4 py-6">
-
-          <div className="mb-3 px-3 text-[9px] font-bold tracking-[3px] text-white/25">
-            MANAGEMENT
-          </div>
-
-          <div className="space-y-1">
-
-            {menuItems.map((item) => {
-
-              const Icon = item.icon;
-
-              const selected =
-                active === item.id;
-
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setActive(item.id);
-                    setSidebarOpen(false);
-                  }}
-                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-xs transition ${
-                    selected
-                      ? "bg-violet-600/15 text-white"
-                      : "text-white/45 hover:bg-white/5 hover:text-white"
-                  }`}
-                >
-
-                  <Icon size={17} />
-
-                  <span className="flex-1">
-                    {item.name}
-                  </span>
-
-                  {selected && (
-                    <ChevronRight size={14} />
-                  )}
-
-                </button>
-              );
-            })}
-
-          </div>
-
+        <div className="menu-title">
+          MANAGEMENT
         </div>
 
+        <div className="sidebar-menu">
+          {menu.map((item) => (
+            <button
+              key={item}
+              className={
+                active === item
+                  ? "menu-item active"
+                  : "menu-item"
+              }
+              onClick={() => setActive(item)}
+            >
+              <span>
+                {item === "Overview" && "⌂"}
+                {item === "Content" && "✦"}
+                {item === "Social Links" && "◎"}
+                {item === "Media" && "▶"}
+                {item === "Notifications" && "♢"}
+                {item === "Settings" && "⚙"}
+              </span>
 
-        <div className="absolute bottom-0 left-0 right-0 border-t border-white/10 p-4">
+              {item}
+            </button>
+          ))}
+        </div>
 
-          <a
-            href="/"
-            target="_blank"
-            className="mb-2 flex items-center gap-3 rounded-xl px-3 py-3 text-xs text-white/45 hover:bg-white/5 hover:text-white"
-          >
-            <Eye size={17} />
-            View Website
+        <div className="sidebar-bottom">
+          <a href="/">
+            ← View Website
           </a>
 
           <button
-            onClick={() => setLogin(false)}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-xs text-red-400 hover:bg-red-500/10"
+            onClick={() => setLoggedIn(false)}
           >
-            <LogOut size={17} />
-            Logout
+            ⇥ Logout
           </button>
-
         </div>
-
       </aside>
-
 
       {/* MAIN */}
 
-      <section className="min-h-screen lg:ml-72">
+      <section className="dashboard-main">
 
-        {/* HEADER */}
+        <header className="dashboard-header">
 
-        <header className="sticky top-0 z-30 flex h-20 items-center justify-between border-b border-white/10 bg-[#05060a]/80 px-5 backdrop-blur-xl lg:px-8">
+          <div>
+            <div className="header-label">
+              DASHBOARD
+            </div>
 
-          <div className="flex items-center gap-4">
+            <h1>
+              {active}
+            </h1>
+          </div>
 
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="rounded-xl border border-white/10 p-2 lg:hidden"
-            >
-              <Menu size={20} />
+          <div className="header-right">
+
+            <button className="notification">
+              🔔
+              <span />
             </button>
 
-            <div>
+            <div className="admin-profile">
+              <img
+                src="/profile.jpg"
+                alt="Admin"
+              />
 
-              <div className="text-xs text-white/35">
-                VEXDOU
+              <div>
+                <strong>Vexdou</strong>
+                <small>Administrator</small>
               </div>
-
-              <h1 className="text-xl font-black">
-                {menuItems.find(
-                  (item) => item.id === active
-                )?.name}
-              </h1>
-
             </div>
 
           </div>
-
-
-          <div className="flex items-center gap-2">
-
-            {saved && (
-              <div className="hidden items-center gap-2 rounded-xl bg-emerald-500/10 px-3 py-2 text-[10px] text-emerald-400 sm:flex">
-                <Check size={14} />
-                Saved
-              </div>
-            )}
-
-            <button
-              onClick={saveData}
-              className="flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-black"
-            >
-              <Save size={15} />
-              <span className="hidden sm:block">
-                Save Changes
-              </span>
-            </button>
-
-          </div>
-
         </header>
 
+        {/* OVERVIEW */}
+
+        {active === "Overview" && (
+          <>
+            <div className="welcome-banner">
+
+              <div>
+                <span>GOOD EVENING 👋</span>
+
+                <h2>
+                  Welcome to your
+                  <br />
+                  control center.
+                </h2>
+
+                <p>
+                  Manage everything on your
+                  personal platform from here.
+                </p>
+              </div>
+
+              <div className="banner-symbol">
+                V
+              </div>
+
+            </div>
+
+            <div className="stats-grid">
+
+              <div className="stat-card">
+                <div className="stat-top">
+                  <span>VISITORS</span>
+                  <b>↗ 12%</b>
+                </div>
+
+                <strong>24,891</strong>
+
+                <small>
+                  Total website visitors
+                </small>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-top">
+                  <span>CLICKS</span>
+                  <b>↗ 8%</b>
+                </div>
+
+                <strong>8,421</strong>
+
+                <small>
+                  Social link clicks
+                </small>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-top">
+                  <span>PROJECTS</span>
+                  <b>LIVE</b>
+                </div>
+
+                <strong>12</strong>
+
+                <small>
+                  Published projects
+                </small>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-top">
+                  <span>STATUS</span>
+                  <b className="online">
+                    ● ONLINE
+                  </b>
+                </div>
+
+                <strong>99.9%</strong>
+
+                <small>
+                  Platform availability
+                </small>
+              </div>
+
+            </div>
+
+            <div className="dashboard-grid">
+
+              {/* ACTIVITY */}
+
+              <div className="panel">
+
+                <div className="panel-header">
+                  <div>
+                    <span>ANALYTICS</span>
+                    <h3>Website activity</h3>
+                  </div>
+
+                  <select>
+                    <option>Last 7 days</option>
+                    <option>Last 30 days</option>
+                    <option>Last year</option>
+                  </select>
+                </div>
+
+                <div className="chart">
+
+                  <div className="chart-lines">
+                    <i />
+                    <i />
+                    <i />
+                    <i />
+                  </div>
+
+                  <div className="chart-bars">
+                    <span style={{ height: "35%" }} />
+                    <span style={{ height: "52%" }} />
+                    <span style={{ height: "43%" }} />
+                    <span style={{ height: "70%" }} />
+                    <span style={{ height: "58%" }} />
+                    <span style={{ height: "82%" }} />
+                    <span style={{ height: "94%" }} />
+                  </div>
+
+                </div>
+
+                <div className="chart-labels">
+                  <span>MON</span>
+                  <span>TUE</span>
+                  <span>WED</span>
+                  <span>THU</span>
+                  <span>FRI</span>
+                  <span>SAT</span>
+                  <span>SUN</span>
+                </div>
+
+              </div>
+
+              {/* QUICK ACTIONS */}
+
+              <div className="panel">
+
+                <div className="panel-header">
+                  <div>
+                    <span>CONTROL</span>
+                    <h3>Quick actions</h3>
+                  </div>
+                </div>
+
+                <div className="quick-actions">
+
+                  <button>
+                    <b>✦</b>
+                    <span>
+                      <strong>Edit website</strong>
+                      <small>
+                        Change your content
+                      </small>
+                    </span>
+                    →
+                  </button>
+
+                  <button>
+                    <b>▶</b>
+                    <span>
+                      <strong>Manage media</strong>
+                      <small>
+                        Video & music
+                      </small>
+                    </span>
+                    →
+                  </button>
+
+                  <button>
+                    <b>◎</b>
+                    <span>
+                      <strong>Social links</strong>
+                      <small>
+                        Manage platforms
+                      </small>
+                    </span>
+                    →
+                  </button>
+
+                  <button>
+                    <b>♢</b>
+                    <span>
+                      <strong>Notifications</strong>
+                      <small>
+                        Manage announcements
+                      </small>
+                    </span>
+                    →
+                  </button>
+
+                </div>
+
+              </div>
+
+            </div>
+
+            {/* RECENT ACTIVITY */}
+
+            <div className="panel recent">
+
+              <div className="panel-header">
+                <div>
+                  <span>SYSTEM</span>
+                  <h3>Recent activity</h3>
+                </div>
+
+                <button className="view-all">
+                  View all
+                </button>
+              </div>
+
+              <div className="activity-list">
+
+                <div>
+                  <i>✓</i>
+                  <span>
+                    <strong>
+                      Website updated
+                    </strong>
+                    <small>
+                      Background video was changed
+                    </small>
+                  </span>
+                  <time>
+                    5 min ago
+                  </time>
+                </div>
+
+                <div>
+                  <i>◎</i>
+                  <span>
+                    <strong>
+                      New visitor
+                    </strong>
+                    <small>
+                      Someone visited your website
+                    </small>
+                  </span>
+                  <time>
+                    12 min ago
+                  </time>
+                </div>
+
+                <div>
+                  <i>♪</i>
+                  <span>
+                    <strong>
+                      Music updated
+                    </strong>
+                    <small>
+                      Background music changed
+                    </small>
+                  </span>
+                  <time>
+                    1 hour ago
+                  </time>
+                </div>
+
+              </div>
+
+            </div>
+          </>
+        )}
 
         {/* CONTENT */}
 
-        <div className="p-5 lg:p-8">
-
-          {/* DASHBOARD */}
-
-          {active === "dashboard" && (
-            <Dashboard
-              data={data}
-              setActive={setActive}
-            />
-          )}
-
-
-          {/* PROFILE */}
-
-          {active === "profile" && (
-            <div className="space-y-6">
-
-              <PageTitle
-                title="Profile"
-                description="Manage your public profile and About section."
-              />
-
-              <div className="grid gap-6 xl:grid-cols-[1fr_350px]">
-
-                <div className="space-y-5">
-
-                  <Card>
-
-                    <Field
-                      label="Display Name"
-                      value={data.name}
-                      onChange={(value) =>
-                        updateData("name", value)
-                      }
-                    />
-
-                    <Field
-                      label="Role / Tagline"
-                      value={data.role}
-                      onChange={(value) =>
-                        updateData("role", value)
-                      }
-                    />
-
-                    <TextArea
-                      label="About Me"
-                      value={data.about}
-                      onChange={(value) =>
-                        updateData("about", value)
-                      }
-                    />
-
-                  </Card>
-
-
-                  <Card>
-
-                    <div className="mb-4 flex items-center gap-2">
-                      <ImageIcon size={17} />
-                      <h3 className="font-bold">
-                        Profile Image
-                      </h3>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-5">
-
-                      <img
-                        src={data.profile}
-                        alt="Profile"
-                        className="h-28 w-28 rounded-2xl object-cover"
-                      />
-
-                      <div>
-
-                        <p className="text-xs text-white/40">
-                          Current image
-                        </p>
-
-                        <p className="mt-1 text-xs text-white/60">
-                          {data.profile}
-                        </p>
-
-                        <div className="mt-4 flex gap-2">
-
-                          <button
-                            onClick={() =>
-                              showNotification(
-                                "Put your new image inside public/ and update the path."
-                              )
-                            }
-                            className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-xs"
-                          >
-                            <Upload size={14} />
-                            Upload
-                          </button>
-
-                        </div>
-
-                      </div>
-
-                    </div>
-
-                  </Card>
-
-                </div>
-
-
-                <PreviewProfile data={data} />
-
-              </div>
-
-            </div>
-          )}
-
-
-          {/* SOCIALS */}
-
-          {active === "socials" && (
-            <div className="space-y-6">
-
-              <PageTitle
-                title="Social Platforms"
-                description="Add and manage the platforms displayed on your website."
-              />
-
-
-              <Card>
-
-                <div className="mb-5 flex items-center gap-2">
-                  <Plus size={17} />
-                  <h3 className="font-bold">
-                    Add Platform
-                  </h3>
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-3">
-
-                  <Input
-                    placeholder="Platform name"
-                    value={newSocial.name}
-                    onChange={(value) =>
-                      setNewSocial({
-                        ...newSocial,
-                        name: value,
-                      })
-                    }
-                  />
-
-                  <Input
-                    placeholder="@username"
-                    value={newSocial.username}
-                    onChange={(value) =>
-                      setNewSocial({
-                        ...newSocial,
-                        username: value,
-                      })
-                    }
-                  />
-
-                  <Input
-                    placeholder="https://..."
-                    value={newSocial.url}
-                    onChange={(value) =>
-                      setNewSocial({
-                        ...newSocial,
-                        url: value,
-                      })
-                    }
-                  />
-
-                </div>
-
-                <button
-                  onClick={addSocial}
-                  className="mt-4 flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-xs font-bold text-black"
-                >
-                  <Plus size={15} />
-                  Add Platform
-                </button>
-
-              </Card>
-
-
-              <div className="grid gap-4 md:grid-cols-2">
-
-                {data.socials.map((social) => (
-
-                  <Card key={social.id}>
-
-                    <div className="flex items-center gap-4">
-
-                      <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-violet-600/10">
-                        <LinkIcon size={19} />
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-
-                        <h3 className="font-bold">
-                          {social.name}
-                        </h3>
-
-                        <p className="text-xs text-white/40">
-                          {social.username}
-                        </p>
-
-                        <p className="mt-1 truncate text-[10px] text-white/25">
-                          {social.url}
-                        </p>
-
-                      </div>
-
-                      <button
-                        onClick={() =>
-                          toggleSocial(social.id)
-                        }
-                        className={`rounded-full px-3 py-1 text-[9px] ${
-                          social.enabled
-                            ? "bg-emerald-500/10 text-emerald-400"
-                            : "bg-red-500/10 text-red-400"
-                        }`}
-                      >
-                        {social.enabled
-                          ? "VISIBLE"
-                          : "HIDDEN"}
-                      </button>
-
-                      <button
-                        onClick={() =>
-                          deleteSocial(social.id)
-                        }
-                        className="rounded-lg p-2 text-red-400 hover:bg-red-500/10"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-
-                    </div>
-
-                  </Card>
-
-                ))}
-
-              </div>
-
-            </div>
-          )}
-
-
-          {/* MEDIA */}
-
-          {active === "media" && (
-            <div className="space-y-6">
-
-              <PageTitle
-                title="Media"
-                description="Manage your website background and profile media."
-              />
-
-              <div className="grid gap-5 md:grid-cols-2">
-
-                <Card>
-
-                  <div className="flex items-center gap-3">
-
-                    <div className="grid h-12 w-12 place-items-center rounded-xl bg-violet-500/10">
-                      <Video size={20} />
-                    </div>
-
-                    <div>
-                      <h3 className="font-bold">
-                        Background Video
-                      </h3>
-
-                      <p className="text-xs text-white/35">
-                        Full-screen website background
-                      </p>
-                    </div>
-
-                  </div>
-
-
-                  <div className="mt-5 overflow-hidden rounded-xl border border-white/10">
-
-                    <video
-                      src={data.background}
-                      muted
-                      loop
-                      autoPlay
-                      playsInline
-                      className="h-52 w-full object-cover"
-                    />
-
-                  </div>
-
-
-                  <p className="mt-3 text-xs text-white/30">
-                    Current: {data.background}
-                  </p>
-
-                  <button
-                    onClick={() =>
-                      showNotification(
-                        "Replace background.mp4 inside public/."
-                      )
-                    }
-                    className="mt-4 flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-xs"
-                  >
-                    <Upload size={15} />
-                    Change Video
-                  </button>
-
-                </Card>
-
-
-                <Card>
-
-                  <div className="flex items-center gap-3">
-
-                    <div className="grid h-12 w-12 place-items-center rounded-xl bg-cyan-500/10">
-                      <ImageIcon size={20} />
-                    </div>
-
-                    <div>
-                      <h3 className="font-bold">
-                        Profile Image
-                      </h3>
-
-                      <p className="text-xs text-white/35">
-                        Main profile picture
-                      </p>
-                    </div>
-
-                  </div>
-
-
-                  <img
-                    src={data.profile}
-                    alt="Profile"
-                    className="mt-5 h-52 w-full rounded-xl object-cover"
-                  />
-
-
-                  <button
-                    onClick={() =>
-                      showNotification(
-                        "Replace profile.jpg inside public/."
-                      )
-                    }
-                    className="mt-4 flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-xs"
-                  >
-                    <Upload size={15} />
-                    Change Image
-                  </button>
-
-                </Card>
-
-              </div>
-
-            </div>
-          )}
-
-
-          {/* MUSIC */}
-
-          {active === "music" && (
-            <div className="space-y-6">
-
-              <PageTitle
-                title="Music"
-                description="Control the music player shown to your visitors."
-              />
-
-              <Card>
-
-                <div className="grid gap-5 md:grid-cols-2">
-
-                  <div>
-
-                    <label className="mb-2 block text-xs text-white/45">
-                      Music Title
-                    </label>
-
-                    <input
-                      value={data.musicTitle}
-                      onChange={(e) =>
-                        updateData(
-                          "musicTitle",
-                          e.target.value
-                        )
-                      }
-                      className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none"
-                    />
-
-                  </div>
-
-
-                  <div>
-
-                    <label className="mb-2 block text-xs text-white/45">
-                      Artist
-                    </label>
-
-                    <input
-                      value={data.musicArtist}
-                      onChange={(e) =>
-                        updateData(
-                          "musicArtist",
-                          e.target.value
-                        )
-                      }
-                      className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none"
-                    />
-
-                  </div>
-
-                </div>
-
-
-                <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-5">
-
-                  <div className="flex items-center gap-4">
-
-                    <div className="grid h-14 w-14 place-items-center rounded-xl bg-gradient-to-br from-violet-600 to-cyan-400">
-                      <Music size={22} />
-                    </div>
-
-                    <div className="flex-1">
-
-                      <div className="font-bold">
-                        {data.musicTitle}
-                      </div>
-
-                      <div className="text-xs text-white/40">
-                        {data.musicArtist}
-                      </div>
-
-                    </div>
-
-                    <div className="text-xs text-white/30">
-                      {data.music}
-                    </div>
-
-                  </div>
-
-                </div>
-
-
-                <button
-                  onClick={() =>
-                    showNotification(
-                      "Replace music.mp3 inside public/."
-                    )
-                  }
-                  className="mt-5 flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-xs font-bold text-black"
-                >
-                  <Upload size={15} />
-                  Change Music
-                </button>
-
-              </Card>
-
-            </div>
-          )}
-
-
-          {/* PROJECTS */}
-
-          {active === "projects" && (
-            <div className="space-y-6">
-
-              <PageTitle
-                title="Projects"
-                description="Showcase the things you're building."
-              />
-
-              <Card>
-
-                <h3 className="mb-5 font-bold">
-                  Add New Project
-                </h3>
-
-                <div className="space-y-3">
-
-                  <Input
-                    placeholder="Project title"
-                    value={newProject.title}
-                    onChange={(value) =>
-                      setNewProject({
-                        ...newProject,
-                        title: value,
-                      })
-                    }
-                  />
-
-                  <TextArea
-                    label="Description"
-                    value={newProject.description}
-                    onChange={(value) =>
-                      setNewProject({
-                        ...newProject,
-                        description: value,
-                      })
-                    }
-                  />
-
-                  <Input
-                    placeholder="Project URL"
-                    value={newProject.url}
-                    onChange={(value) =>
-                      setNewProject({
-                        ...newProject,
-                        url: value,
-                      })
-                    }
-                  />
-
-                </div>
-
-
-                <button
-                  onClick={addProject}
-                  className="mt-4 flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-xs font-bold text-black"
-                >
-                  <Plus size={15} />
-                  Add Project
-                </button>
-
-              </Card>
-
-
-              <div className="grid gap-4 md:grid-cols-2">
-
-                {data.projects.map((project) => (
-
-                  <Card key={project.id}>
-
-                    <div className="flex items-start justify-between">
-
-                      <div>
-
-                        <h3 className="font-bold">
-                          {project.title}
-                        </h3>
-
-                        <p className="mt-2 text-xs leading-6 text-white/40">
-                          {project.description}
-                        </p>
-
-                      </div>
-
-                      <button
-                        onClick={() =>
-                          deleteProject(project.id)
-                        }
-                        className="rounded-lg p-2 text-red-400 hover:bg-red-500/10"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-
-                    </div>
-
-
-                    <a
-                      href={project.url}
-                      target="_blank"
-                      className="mt-4 inline-flex items-center gap-2 text-xs text-violet-400"
-                    >
-                      View project
-                      <ExternalLink size={13} />
-                    </a>
-
-                  </Card>
-
-                ))}
-
-              </div>
-
-            </div>
-          )}
-
-
-          {/* UPDATES */}
-
-          {active === "updates" && (
-            <div className="space-y-6">
-
-              <PageTitle
-                title="Updates"
-                description="Publish news and updates on your website."
-              />
-
-
-              <Card>
-
-                <h3 className="mb-5 font-bold">
-                  Publish Update
-                </h3>
-
-                <div className="space-y-3">
-
-                  <Input
-                    placeholder="Update title"
-                    value={newUpdate.title}
-                    onChange={(value) =>
-                      setNewUpdate({
-                        ...newUpdate,
-                        title: value,
-                      })
-                    }
-                  />
-
-                  <TextArea
-                    label="Update"
-                    value={newUpdate.text}
-                    onChange={(value) =>
-                      setNewUpdate({
-                        ...newUpdate,
-                        text: value,
-                      })
-                    }
-                  />
-
-                </div>
-
-
-                <button
-                  onClick={addUpdate}
-                  className="mt-4 flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-xs font-bold text-black"
-                >
-                  <Plus size={15} />
-                  Publish Update
-                </button>
-
-              </Card>
-
-
-              <div className="space-y-4">
-
-                {data.updates.map((item) => (
-
-                  <Card key={item.id}>
-
-                    <div className="flex items-start gap-4">
-
-                      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-violet-500/10">
-                        <FileText size={18} />
-                      </div>
-
-                      <div className="flex-1">
-
-                        <div className="text-[9px] tracking-[2px] text-violet-400">
-                          {item.date}
-                        </div>
-
-                        <h3 className="mt-2 font-bold">
-                          {item.title}
-                        </h3>
-
-                        <p className="mt-2 text-xs leading-6 text-white/40">
-                          {item.text}
-                        </p>
-
-                      </div>
-
-                      <button
-                        onClick={() =>
-                          deleteUpdate(item.id)
-                        }
-                        className="rounded-lg p-2 text-red-400 hover:bg-red-500/10"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-
-                    </div>
-
-                  </Card>
-
-                ))}
-
-              </div>
-
-            </div>
-          )}
-
-
-          {/* NOTIFICATIONS */}
-
-          {active === "notifications" && (
-            <div className="space-y-6">
-
-              <PageTitle
-                title="Notifications"
-                description="Create announcements for your website visitors."
-              />
-
-
-              <Card>
-
-                <div className="flex items-center gap-3">
-
-                  <div className="grid h-12 w-12 place-items-center rounded-xl bg-yellow-500/10">
-                    <Bell size={20} />
-                  </div>
-
-                  <div>
-
-                    <h3 className="font-bold">
-                      Website Notification
-                    </h3>
-
-                    <p className="text-xs text-white/35">
-                      Send a notification to the public website.
-                    </p>
-
-                  </div>
-
-                </div>
-
-
+        {active === "Content" && (
+          <div className="content-page">
+
+            <div className="edit-card">
+              <span>PROFILE</span>
+              <h2>Personal information</h2>
+
+              <label>
+                Display name
+                <input defaultValue="Vexdou" />
+              </label>
+
+              <label>
+                Short description
                 <textarea
-                  value={notification}
-                  onChange={(e) =>
-                    setNotification(e.target.value)
-                  }
-                  placeholder="Write notification..."
-                  className="mt-6 min-h-32 w-full resize-none rounded-xl border border-white/10 bg-black/20 p-4 text-sm outline-none"
+                  defaultValue="Building ideas into reality."
                 />
+              </label>
 
+              <button className="save-button">
+                SAVE CHANGES
+              </button>
+            </div>
 
-                <button
-                  onClick={() => {
-                    if (!notification) return;
+            <div className="edit-card">
+              <span>ABOUT</span>
+              <h2>About me</h2>
 
-                    localStorage.setItem(
-                      "vexdou-notification",
-                      notification
-                    );
+              <label>
+                About text
+                <textarea
+                  rows={7}
+                  defaultValue="Welcome to my personal digital space. I enjoy technology, creative projects and building useful digital experiences."
+                />
+              </label>
 
-                    showNotification(
-                      "Notification published."
-                    );
-                  }}
-                  className="mt-4 flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-xs font-bold text-black"
-                >
-                  <Bell size={15} />
-                  Publish Notification
-                </button>
+              <button className="save-button">
+                UPDATE ABOUT
+              </button>
+            </div>
 
-              </Card>
+          </div>
+        )}
 
+        {/* SOCIAL LINKS */}
 
-              <Card>
+        {active === "Social Links" && (
+          <div className="content-page">
 
-                <h3 className="font-bold">
-                  Notification Preview
-                </h3>
-
-                <div className="mt-4 rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-5">
-
-                  <div className="flex items-start gap-3">
-
-                    <Bell
-                      size={18}
-                      className="text-yellow-400"
-                    />
-
-                    <div>
-
-                      <div className="text-xs font-bold">
-                        VEXDOU
-                      </div>
-
-                      <div className="mt-1 text-xs text-white/50">
-                        {notification ||
-                          "Your notification will appear here."}
-                      </div>
-
-                    </div>
-
-                  </div>
-
+            {[
+              "TikTok",
+              "Instagram",
+              "Telegram",
+              "WhatsApp",
+              "YouTube",
+              "GitHub",
+            ].map((social) => (
+              <div
+                className="social-edit"
+                key={social}
+              >
+                <div className="social-edit-icon">
+                  {social === "TikTok" && "♪"}
+                  {social === "Instagram" && "◎"}
+                  {social === "Telegram" && "➤"}
+                  {social === "WhatsApp" && "◉"}
+                  {social === "YouTube" && "▶"}
+                  {social === "GitHub" && "◈"}
                 </div>
 
-              </Card>
+                <div>
+                  <strong>{social}</strong>
+
+                  <input
+                    defaultValue={`https://${social.toLowerCase()}.com/`}
+                    placeholder="Your link"
+                  />
+                </div>
+
+                <button>
+                  SAVE
+                </button>
+              </div>
+            ))}
+
+          </div>
+        )}
+
+        {/* MEDIA */}
+
+        {active === "Media" && (
+          <div className="media-grid">
+
+            <div className="media-card">
+
+              <div className="media-preview">
+                🎬
+              </div>
+
+              <span>
+                BACKGROUND VIDEO
+              </span>
+
+              <h2>
+                background.mp4
+              </h2>
+
+              <p>
+                Current website background video.
+              </p>
+
+              <button className="upload-button">
+                CHANGE VIDEO
+              </button>
 
             </div>
-          )}
 
+            <div className="media-card">
 
-          {/* SETTINGS */}
+              <div className="media-preview">
+                ♪
+              </div>
 
-          {active === "settings" && (
-            <div className="space-y-6">
+              <span>
+                BACKGROUND MUSIC
+              </span>
 
-              <PageTitle
-                title="Settings"
-                description="General controls for your VEXDOU platform."
+              <h2>
+                music.mp3
+              </h2>
+
+              <p>
+                Music played on the website.
+              </p>
+
+              <button className="upload-button">
+                CHANGE MUSIC
+              </button>
+
+            </div>
+
+            <div className="media-card">
+
+              <div className="media-preview">
+                👤
+              </div>
+
+              <span>
+                PROFILE IMAGE
+              </span>
+
+              <h2>
+                profile.jpg
+              </h2>
+
+              <p>
+                Main profile picture.
+              </p>
+
+              <button className="upload-button">
+                CHANGE IMAGE
+              </button>
+
+            </div>
+
+          </div>
+        )}
+
+        {/* NOTIFICATIONS */}
+
+        {active === "Notifications" && (
+          <div className="content-page">
+
+            <div className="notification-editor">
+
+              <span>
+                ANNOUNCEMENT
+              </span>
+
+              <h2>
+                Create notification
+              </h2>
+
+              <input
+                placeholder="Notification title"
               />
 
+              <textarea
+                placeholder="Write your announcement..."
+                rows={7}
+              />
 
-              <Card>
+              <div className="notification-actions">
 
-                <h3 className="font-bold">
-                  Website
-                </h3>
-
-                <div className="mt-5 space-y-4">
-
-                  <SettingRow
-                    title="Public Website"
-                    description="Make your website publicly accessible."
-                    enabled={true}
-                  />
-
-                  <SettingRow
-                    title="Music Player"
-                    description="Show music controls to visitors."
-                    enabled={true}
-                  />
-
-                  <SettingRow
-                    title="Background Video"
-                    description="Show your video background."
-                    enabled={true}
-                  />
-
-                </div>
-
-              </Card>
-
-
-              <Card>
-
-                <h3 className="font-bold">
-                  Admin
-                </h3>
-
-                <div className="mt-5 rounded-xl border border-yellow-500/10 bg-yellow-500/5 p-4">
-
-                  <div className="flex gap-3">
-
-                    <Shield
-                      size={18}
-                      className="text-yellow-400"
-                    />
-
-                    <div>
-
-                      <div className="text-xs font-bold">
-                        Current demo authentication
-                      </div>
-
-                      <p className="mt-1 text-[11px] leading-5 text-white/40">
-                        This panel currently uses browser-side
-                        authentication. For a real production
-                        admin system, authentication must be moved
-                        to a secure server/database.
-                      </p>
-
-                    </div>
-
-                  </div>
-
-                </div>
-
-              </Card>
-
-
-              <Card>
-
-                <h3 className="font-bold">
-                  Danger Zone
-                </h3>
-
-                <p className="mt-2 text-xs text-white/35">
-                  Reset the website data stored in this browser.
-                </p>
-
-                <button
-                  onClick={() => {
-                    localStorage.removeItem(
-                      "vexdou-site-data"
-                    );
-
-                    setData(defaultData);
-
-                    showNotification(
-                      "Website data reset."
-                    );
-                  }}
-                  className="mt-4 flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-2.5 text-xs text-red-400"
-                >
-                  <Trash2 size={15} />
-                  Reset Data
+                <button className="secondary-action">
+                  SAVE DRAFT
                 </button>
 
-              </Card>
+                <button className="save-button">
+                  PUBLISH
+                </button>
+
+              </div>
 
             </div>
-          )}
 
-        </div>
+          </div>
+        )}
+
+        {/* SETTINGS */}
+
+        {active === "Settings" && (
+          <div className="content-page">
+
+            <div className="settings-card">
+
+              <div>
+                <span>WEBSITE</span>
+                <h2>Website status</h2>
+                <p>
+                  Your website is currently live.
+                </p>
+              </div>
+
+              <div className="toggle active-toggle">
+                <i />
+              </div>
+
+            </div>
+
+            <div className="settings-card">
+
+              <div>
+                <span>MUSIC</span>
+                <h2>Background music</h2>
+                <p>
+                  Allow music player on website.
+                </p>
+              </div>
+
+              <div className="toggle active-toggle">
+                <i />
+              </div>
+
+            </div>
+
+            <div className="settings-card">
+
+              <div>
+                <span>VIDEO</span>
+                <h2>Background video</h2>
+                <p>
+                  Show cinematic background video.
+                </p>
+              </div>
+
+              <div className="toggle active-toggle">
+                <i />
+              </div>
+
+            </div>
+
+          </div>
+        )}
 
       </section>
 
+      <style jsx global>{`
 
-      {/* TOAST */}
+        * {
+          box-sizing: border-box;
+        }
 
-      {notification && active !== "notifications" && (
-        <div className="fixed bottom-5 left-1/2 z-[100] -translate-x-1/2 rounded-xl border border-white/10 bg-[#11131a] px-5 py-3 text-xs shadow-2xl">
-          {notification}
-        </div>
-      )}
+        body {
+          margin: 0;
+          background: #050507;
+          color: white;
+          font-family:
+            Inter,
+            Arial,
+            sans-serif;
+        }
 
+        button,
+        input,
+        textarea,
+        select {
+          font: inherit;
+        }
+
+        button {
+          cursor: pointer;
+        }
+
+        /* LOGIN */
+
+        .admin-login-page {
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 25px;
+          background:
+            radial-gradient(
+              circle at 20% 20%,
+              rgba(124,58,237,.18),
+              transparent 35%
+            ),
+            radial-gradient(
+              circle at 80% 80%,
+              rgba(34,211,238,.08),
+              transparent 30%
+            ),
+            #050507;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .admin-glow {
+          position: absolute;
+          width: 350px;
+          height: 350px;
+          border-radius: 50%;
+          filter: blur(100px);
+          pointer-events: none;
+        }
+
+        .glow-one {
+          background: rgba(124,58,237,.15);
+          top: -150px;
+          left: -100px;
+        }
+
+        .glow-two {
+          background: rgba(34,211,238,.08);
+          right: -120px;
+          bottom: -150px;
+        }
+
+        .login-card {
+          width: 100%;
+          max-width: 430px;
+          padding: 45px;
+          border: 1px solid rgba(255,255,255,.09);
+          border-radius: 30px;
+          background: rgba(255,255,255,.035);
+          backdrop-filter: blur(30px);
+          box-shadow:
+            0 30px 100px rgba(0,0,0,.45);
+          position: relative;
+          z-index: 2;
+        }
+
+        .login-logo {
+          width: 58px;
+          height: 58px;
+          display: grid;
+          place-items: center;
+          border-radius: 18px;
+          background: linear-gradient(
+            135deg,
+            #8b5cf6,
+            #22d3ee
+          );
+          color: white;
+          font-size: 22px;
+          font-weight: 900;
+          margin-bottom: 30px;
+          box-shadow:
+            0 15px 45px rgba(139,92,246,.2);
+        }
+
+        .login-small,
+        .header-label,
+        .menu-title {
+          color: #a78bfa;
+          font-size: 9px;
+          font-weight: 800;
+          letter-spacing: 3px;
+        }
+
+        .login-card h1 {
+          margin: 12px 0;
+          font-size: 38px;
+          letter-spacing: -2px;
+        }
+
+        .login-card > p {
+          color: rgba(255,255,255,.4);
+          line-height: 1.7;
+          font-size: 13px;
+          margin-bottom: 28px;
+        }
+
+        .password-box {
+          display: flex;
+          gap: 8px;
+          padding: 6px;
+          border: 1px solid rgba(255,255,255,.09);
+          border-radius: 15px;
+          background: rgba(255,255,255,.035);
+        }
+
+        .password-box input {
+          flex: 1;
+          min-width: 0;
+          padding: 12px;
+          border: 0;
+          outline: 0;
+          background: transparent;
+          color: white;
+        }
+
+        .password-box button {
+          border: 0;
+          border-radius: 10px;
+          padding: 0 12px;
+          background: rgba(255,255,255,.06);
+          color: rgba(255,255,255,.5);
+          font-size: 10px;
+        }
+
+        .login-error {
+          margin-top: 12px;
+          padding: 11px 14px;
+          border-radius: 12px;
+          background: rgba(239,68,68,.08);
+          border: 1px solid rgba(239,68,68,.18);
+          color: #fca5a5;
+          font-size: 11px;
+        }
+
+        .login-button {
+          width: 100%;
+          margin-top: 18px;
+          padding: 15px;
+          border: 0;
+          border-radius: 14px;
+          background: white;
+          color: #050507;
+          font-size: 10px;
+          font-weight: 900;
+          letter-spacing: 1px;
+          display: flex;
+          justify-content: space-between;
+          padding-left: 20px;
+          padding-right: 20px;
+          transition: .25s;
+        }
+
+        .login-button:hover {
+          transform: translateY(-2px);
+          box-shadow:
+            0 15px 40px rgba(255,255,255,.1);
+        }
+
+        .back-home {
+          display: block;
+          margin-top: 22px;
+          text-align: center;
+          color: rgba(255,255,255,.3);
+          font-size: 10px;
+        }
+
+        /* DASHBOARD */
+
+        .dashboard {
+          min-height: 100vh;
+          display: flex;
+          background: #050507;
+        }
+
+        .sidebar {
+          width: 250px;
+          min-height: 100vh;
+          position: fixed;
+          left: 0;
+          top: 0;
+          bottom: 0;
+          padding: 25px 17px;
+          border-right: 1px solid rgba(255,255,255,.07);
+          background: rgba(8,8,12,.85);
+          backdrop-filter: blur(25px);
+          display: flex;
+          flex-direction: column;
+          z-index: 10;
+        }
+
+        .brand {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 5px 10px 35px;
+        }
+
+        .brand-icon {
+          width: 38px;
+          height: 38px;
+          display: grid;
+          place-items: center;
+          border-radius: 12px;
+          background: linear-gradient(
+            135deg,
+            #8b5cf6,
+            #22d3ee
+          );
+          font-weight: 900;
+        }
+
+        .brand strong {
+          display: block;
+          font-size: 12px;
+          letter-spacing: 3px;
+        }
+
+        .brand small {
+          display: block;
+          margin-top: 4px;
+          color: rgba(255,255,255,.3);
+          font-size: 7px;
+          letter-spacing: 2px;
+        }
+
+        .menu-title {
+          padding: 0 12px 10px;
+          font-size: 7px;
+          color: rgba(255,255,255,.25);
+        }
+
+        .sidebar-menu {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .menu-item {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px;
+          border: 0;
+          border-radius: 12px;
+          background: transparent;
+          color: rgba(255,255,255,.4);
+          text-align: left;
+          font-size: 11px;
+          transition: .25s;
+        }
+
+        .menu-item span {
+          width: 20px;
+          text-align: center;
+          font-size: 15px;
+        }
+
+        .menu-item:hover,
+        .menu-item.active {
+          background: rgba(139,92,246,.1);
+          color: white;
+        }
+
+        .menu-item.active {
+          box-shadow:
+            inset 2px 0 0 #8b5cf6;
+        }
+
+        .sidebar-bottom {
+          margin-top: auto;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .sidebar-bottom a,
+        .sidebar-bottom button {
+          padding: 12px;
+          border: 0;
+          background: transparent;
+          color: rgba(255,255,255,.3);
+          text-align: left;
+          font-size: 10px;
+        }
+
+        .sidebar-bottom a:hover,
+        .sidebar-bottom button:hover {
+          color: white;
+        }
+
+        .dashboard-main {
+          width: calc(100% - 250px);
+          margin-left: 250px;
+          padding: 35px 45px 60px;
+        }
+
+        .dashboard-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 35px;
+        }
+
+        .dashboard-header h1 {
+          margin: 7px 0 0;
+          font-size: 34px;
+          letter-spacing: -2px;
+        }
+
+        .header-right {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+        }
+
+        .notification {
+          position: relative;
+          width: 42px;
+          height: 42px;
+          border: 1px solid rgba(255,255,255,.08);
+          border-radius: 13px;
+          background: rgba(255,255,255,.03);
+          color: white;
+        }
+
+        .notification span {
+          position: absolute;
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #8b5cf6;
+          top: 8px;
+          right: 8px;
+        }
+
+        .admin-profile {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .admin-profile img {
+          width: 42px;
+          height: 42px;
+          object-fit: cover;
+          border-radius: 13px;
+        }
+
+        .admin-profile strong,
+        .admin-profile small {
+          display: block;
+        }
+
+        .admin-profile strong {
+          font-size: 11px;
+        }
+
+        .admin-profile small {
+          margin-top: 4px;
+          color: rgba(255,255,255,.3);
+          font-size: 8px;
+        }
+
+        /* BANNER */
+
+        .welcome-banner {
+          position: relative;
+          overflow: hidden;
+          min-height: 210px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 35px;
+          border: 1px solid rgba(255,255,255,.08);
+          border-radius: 25px;
+          background:
+            radial-gradient(
+              circle at 80% 30%,
+              rgba(139,92,246,.16),
+              transparent 35%
+            ),
+            rgba(255,255,255,.025);
+        }
+
+        .welcome-banner span {
+          color: #a78bfa;
+          font-size: 8px;
+          letter-spacing: 3px;
+          font-weight: 800;
+        }
+
+        .welcome-banner h2 {
+          margin: 13px 0;
+          font-size: 35px;
+          line-height: 1;
+          letter-spacing: -2px;
+        }
+
+        .welcome-banner p {
+          color: rgba(255,255,255,.38);
+          font-size: 11px;
+        }
+
+        .banner-symbol {
+          font-size: 180px;
+          line-height: 1;
+          font-weight: 900;
+          color: rgba(255,255,255,.025);
+          transform: rotate(-10deg);
+        }
+
+        /* STATS */
+
+        .stats-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 12px;
+          margin-top: 12px;
+        }
+
+        .stat-card {
+          padding: 20px;
+          border: 1px solid rgba(255,255,255,.07);
+          border-radius: 18px;
+          background: rgba(255,255,255,.025);
+        }
+
+        .stat-top {
+          display: flex;
+          justify-content: space-between;
+          font-size: 7px;
+          color: rgba(255,255,255,.3);
+          letter-spacing: 2px;
+        }
+
+        .stat-top b {
+          color: #a78bfa;
+          letter-spacing: 0;
+        }
+
+        .stat-top b.online {
+          color: #34d399;
+        }
+
+        .stat-card > strong {
+          display: block;
+          margin-top: 18px;
+          font-size: 28px;
+        }
+
+        .stat-card > small {
+          display: block;
+          margin-top: 5px;
+          color: rgba(255,255,255,.25);
+          font-size: 9px;
+        }
+
+        /* PANELS */
+
+        .dashboard-grid {
+          display: grid;
+          grid-template-columns: 1.4fr 1fr;
+          gap: 12px;
+          margin-top: 12px;
+        }
+
+        .panel {
+          padding: 24px;
+          border: 1px solid rgba(255,255,255,.07);
+          border-radius: 20px;
+          background: rgba(255,255,255,.025);
+        }
+
+        .panel-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .panel-header span {
+          color: #a78bfa;
+          font-size: 7px;
+          letter-spacing: 2px;
+        }
+
+        .panel-header h3 {
+          margin: 7px 0 0;
+          font-size: 15px;
+        }
+
+        .panel-header select {
+          border: 1px solid rgba(255,255,255,.08);
+          border-radius: 8px;
+          padding: 7px;
+          background: #101014;
+          color: rgba(255,255,255,.5);
+          font-size: 8px;
+          outline: 0;
+        }
+
+        /* CHART */
+
+        .chart {
+          position: relative;
+          height: 210px;
+          margin-top: 25px;
+        }
+
+        .chart-lines {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+        }
+
+        .chart-lines i {
+          display: block;
+          width: 100%;
+          border-top: 1px dashed rgba(255,255,255,.06);
+        }
+
+        .chart-bars {
+          position: absolute;
+          inset: 10px 10px 0;
+          display: flex;
+          align-items: flex-end;
+          justify-content: space-around;
+          gap: 15px;
+        }
+
+        .chart-bars span {
+          width: 100%;
+          max-width: 35px;
+          border-radius: 8px 8px 2px 2px;
+          background:
+            linear-gradient(
+              to top,
+              #6d28d9,
+              #22d3ee
+            );
+          opacity: .8;
+          transition: .3s;
+        }
+
+        .chart-bars span:hover {
+          opacity: 1;
+          transform: translateY(-5px);
+        }
+
+        .chart-labels {
+          display: flex;
+          justify-content: space-around;
+          color: rgba(255,255,255,.2);
+          font-size: 7px;
+          letter-spacing: 1px;
+        }
+
+        /* QUICK ACTIONS */
+
+        .quick-actions {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          margin-top: 20px;
+        }
+
+        .quick-actions button {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 13px;
+          border: 1px solid rgba(255,255,255,.06);
+          border-radius: 12px;
+          background: rgba(255,255,255,.02);
+          color: rgba(255,255,255,.35);
+          text-align: left;
+          transition: .25s;
+        }
+
+        .quick-actions button:hover {
+          border-color: rgba(139,92,246,.3);
+          background: rgba(139,92,246,.06);
+          color: white;
+        }
+
+        .quick-actions button > b {
+          width: 30px;
+          height: 30px;
+          display: grid;
+          place-items: center;
+          border-radius: 9px;
+          background: rgba(139,92,246,.1);
+          color: #a78bfa;
+        }
+
+        .quick-actions button span {
+          flex: 1;
+        }
+
+        .quick-actions strong,
+        .quick-actions small {
+          display: block;
+        }
+
+        .quick-actions strong {
+          font-size: 10px;
+        }
+
+        .quick-actions small {
+          margin-top: 3px;
+          color: rgba(255,255,255,.25);
+          font-size: 8px;
+        }
+
+        /* RECENT */
+
+        .recent {
+          margin-top: 12px;
+        }
+
+        .view-all {
+          border: 0;
+          background: transparent;
+          color: #a78bfa;
+          font-size: 9px;
+        }
+
+        .activity-list {
+          margin-top: 20px;
+        }
+
+        .activity-list > div {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 14px 0;
+          border-bottom: 1px solid rgba(255,255,255,.05);
+        }
+
+        .activity-list > div:last-child {
+          border-bottom: 0;
+        }
+
+        .activity-list i {
+          width: 32px;
+          height: 32px;
+          display: grid;
+          place-items: center;
+          border-radius: 10px;
+          background: rgba(139,92,246,.08);
+          color: #a78bfa;
+          font-style: normal;
+          font-size: 11px;
+        }
+
+        .activity-list span {
+          flex: 1;
+        }
+
+        .activity-list strong,
+        .activity-list small {
+          display: block;
+        }
+
+        .activity-list strong {
+          font-size: 10px;
+        }
+
+        .activity-list small {
+          margin-top: 4px;
+          color: rgba(255,255,255,.25);
+          font-size: 8px;
+        }
+
+        .activity-list time {
+          color: rgba(255,255,255,.2);
+          font-size: 8px;
+        }
+
+        /* CONTENT */
+
+        .content-page {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 14px;
+        }
+
+        .edit-card,
+        .notification-editor {
+          padding: 25px;
+          border: 1px solid rgba(255,255,255,.07);
+          border-radius: 20px;
+          background: rgba(255,255,255,.025);
+        }
+
+        .edit-card > span,
+        .notification-editor > span {
+          color: #a78bfa;
+          font-size: 7px;
+          letter-spacing: 2px;
+        }
+
+        .edit-card h2,
+        .notification-editor h2 {
+          margin: 8px 0 25px;
+          font-size: 20px;
+        }
+
+        label {
+          display: block;
+          margin-top: 16px;
+          color: rgba(255,255,255,.35);
+          font-size: 9px;
+        }
+
+        input,
+        textarea {
+          width: 100%;
+          margin-top: 7px;
+          padding: 13px;
+          border: 1px solid rgba(255,255,255,.08);
+          border-radius: 11px;
+          outline: 0;
+          background: rgba(255,255,255,.035);
+          color: white;
+          resize: vertical;
+        }
+
+        input:focus,
+        textarea:focus {
+          border-color: rgba(139,92,246,.45);
+        }
+
+        .save-button,
+        .upload-button {
+          margin-top: 20px;
+          padding: 12px 18px;
+          border: 0;
+          border-radius: 10px;
+          background: white;
+          color: #050507;
+          font-size: 9px;
+          font-weight: 900;
+        }
+
+        /* SOCIAL */
+
+        .social-edit {
+          display: flex;
+          align-items: center;
+          gap: 15px;
+          padding: 16px;
+          border: 1px solid rgba(255,255,255,.07);
+          border-radius: 16px;
+          background: rgba(255,255,255,.025);
+        }
+
+        .social-edit-icon {
+          width: 42px;
+          height: 42px;
+          display: grid;
+          place-items: center;
+          flex-shrink: 0;
+          border-radius: 12px;
+          background: rgba(139,92,246,.1);
+          color: #a78bfa;
+        }
+
+        .social-edit > div:nth-child(2) {
+          flex: 1;
+        }
+
+        .social-edit strong {
+          display: block;
+          font-size: 11px;
+        }
+
+        .social-edit input {
+          margin-top: 6px;
+        }
+
+        .social-edit > button {
+          border: 0;
+          border-radius: 9px;
+          padding: 9px 12px;
+          background: rgba(255,255,255,.07);
+          color: white;
+          font-size: 8px;
+        }
+
+        /* MEDIA */
+
+        .media-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 14px;
+        }
+
+        .media-card {
+          padding: 20px;
+          border: 1px solid rgba(255,255,255,.07);
+          border-radius: 20px;
+          background: rgba(255,255,255,.025);
+        }
+
+        .media-preview {
+          height: 170px;
+          display: grid;
+          place-items: center;
+          border-radius: 15px;
+          background:
+            radial-gradient(
+              circle,
+              rgba(139,92,246,.12),
+              rgba(255,255,255,.025)
+            );
+          font-size: 50px;
+          margin-bottom: 20px;
+        }
+
+        .media-card > span {
+          color: #a78bfa;
+          font-size: 7px;
+          letter-spacing: 2px;
+        }
+
+        .media-card h2 {
+          margin: 8px 0;
+          font-size: 15px;
+        }
+
+        .media-card p {
+          color: rgba(255,255,255,.3);
+          font-size: 9px;
+          line-height: 1.6;
+        }
+
+        /* NOTIFICATIONS */
+
+        .notification-editor {
+          max-width: 700px;
+        }
+
+        .notification-actions {
+          display: flex;
+          gap: 8px;
+        }
+
+        .secondary-action {
+          margin-top: 20px;
+          padding: 12px 18px;
+          border: 1px solid rgba(255,255,255,.08);
+          border-radius: 10px;
+          background: rgba(255,255,255,.04);
+          color: white;
+          font-size: 9px;
+        }
+
+        /* SETTINGS */
+
+        .settings-card {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 23px;
+          border: 1px solid rgba(255,255,255,.07);
+          border-radius: 18px;
+          background: rgba(255,255,255,.025);
+        }
+
+        .settings-card + .settings-card {
+          margin-top: 10px;
+        }
+
+        .settings-card span {
+          color: #a78bfa;
+          font-size: 7px;
+          letter-spacing: 2px;
+        }
+
+        .settings-card h2 {
+          margin: 7px 0 4px;
+          font-size: 14px;
+        }
+
+        .settings-card p {
+          margin: 0;
+          color: rgba(255,255,255,.3);
+          font-size: 9px;
+        }
+
+        .toggle {
+          width: 45px;
+          height: 25px;
+          padding: 3px;
+          border-radius: 999px;
+          background: rgba(255,255,255,.1);
+        }
+
+        .toggle i {
+          display: block;
+          width: 19px;
+          height: 19px;
+          border-radius: 50%;
+          background: white;
+        }
+
+        .active-toggle {
+          background: #7c3aed;
+        }
+
+        .active-toggle i {
+          margin-left: 20px;
+        }
+
+        /* MOBILE */
+
+        @media (max-width: 1000px) {
+
+          .sidebar {
+            width: 210px;
+          }
+
+          .dashboard-main {
+            width: calc(100% - 210px);
+            margin-left: 210px;
+            padding: 25px;
+          }
+
+          .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+
+          .dashboard-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .media-grid {
+            grid-template-columns: 1fr;
+          }
+
+        }
+
+        @media (max-width: 700px) {
+
+          .sidebar {
+            width: 68px;
+            padding: 15px 8px;
+          }
+
+          .brand {
+            justify-content: center;
+            padding: 5px 0 30px;
+          }
+
+          .brand > div:last-child,
+          .menu-title,
+          .menu-item {
+            font-size: 0;
+          }
+
+          .menu-item {
+            justify-content: center;
+          }
+
+          .menu-item span {
+            font-size: 17px;
+          }
+
+          .sidebar-bottom a,
+          .sidebar-bottom button {
+            font-size: 0;
+            text-align: center;
+          }
+
+          .dashboard-main {
+            width: calc(100% - 68px);
+            margin-left: 68px;
+            padding: 20px 13px 40px;
+          }
+
+          .dashboard-header h1 {
+            font-size: 27px;
+          }
+
+          .admin-profile div {
+            display: none;
+          }
+
+          .welcome-banner {
+            padding: 25px;
+          }
+
+          .welcome-banner h2 {
+            font-size: 27px;
+          }
+
+          .banner-symbol {
+            display: none;
+          }
+
+          .stats-grid {
+            grid-template-columns: 1fr 1fr;
+          }
+
+          .stat-card {
+            padding: 15px;
+          }
+
+          .stat-card > strong {
+            font-size: 22px;
+          }
+
+          .content-page {
+            grid-template-columns: 1fr;
+          }
+
+          .social-edit {
+            flex-wrap: wrap;
+          }
+
+          .social-edit > div:nth-child(2) {
+            min-width: calc(100% - 60px);
+          }
+
+          .social-edit > button {
+            width: 100%;
+          }
+
+          .login-card {
+            padding: 30px 22px;
+          }
+
+        }
+
+        @media (max-width: 420px) {
+
+          .stats-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .header-right {
+            gap: 8px;
+          }
+
+          .notification {
+            display: none;
+          }
+
+        }
+
+      `}</style>
     </main>
   );
-}
-
-
-/* ================= COMPONENTS ================= */
-
-function Dashboard({
-  data,
-  setActive,
-}: {
-  data: SiteData;
-  setActive: (page: string) => void;
-}) {
-  const visibleSocials = data.socials.filter(
-    (social) => social.enabled
-  );
-
-  return (
-    <div className="space-y-8">
-
-      <PageTitle
-        title="Dashboard"
-        description="Welcome back. Control your VEXDOU platform from here."
-      />
-
-
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-
-        <StatCard
-          title="Social Platforms"
-          value={visibleSocials.length.toString()}
-          icon={<LinkIcon size={19} />}
-        />
-
-        <StatCard
-          title="Projects"
-          value={data.projects.length.toString()}
-          icon={<Activity size={19} />}
-        />
-
-        <StatCard
-          title="Updates"
-          value={data.updates.length.toString()}
-          icon={<FileText size={19} />}
-        />
-
-        <StatCard
-          title="Status"
-          value="ONLINE"
-          icon={<Check size={19} />}
-          green
-        />
-
-      </div>
-
-
-      <div className="grid gap-5 xl:grid-cols-2">
-
-        <Card>
-
-          <div className="flex items-center justify-between">
-
-            <div>
-
-              <h3 className="font-bold">
-                Quick Management
-              </h3>
-
-              <p className="mt-1 text-xs text-white/35">
-                Jump directly to a section.
-              </p>
-
-            </div>
-
-          </div>
-
-
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-
-            <QuickButton
-              icon={<Shield size={17} />}
-              text="Edit Profile"
-              onClick={() => setActive("profile")}
-            />
-
-            <QuickButton
-              icon={<LinkIcon size={17} />}
-              text="Social Platforms"
-              onClick={() => setActive("socials")}
-            />
-
-            <QuickButton
-              icon={<Music size={17} />}
-              text="Manage Music"
-              onClick={() => setActive("music")}
-            />
-
-            <QuickButton
-              icon={<Video size={17} />}
-              text="Manage Media"
-              onClick={() => setActive("media")}
-            />
-
-          </div>
-
-        </Card>
-
-
-        <Card>
-
-          <div className="flex items-center justify-between">
-
-            <div>
-
-              <h3 className="font-bold">
-                Website Preview
-              </h3>
-
-              <p className="mt-1 text-xs text-white/35">
-                Your public website is ready.
-              </p>
-
-            </div>
-
-            <a
-              href="/"
-              target="_blank"
-              className="rounded-xl bg-white/5 p-2 text-white/60"
-            >
-              <ExternalLink size={16} />
-            </a>
-
-          </div>
-
-
-          <div className="mt-5 rounded-2xl border border-white/10 bg-gradient-to-br from-violet-950/30 to-cyan-950/10 p-6">
-
-            <div className="text-3xl font-black">
-              {data.name}
-            </div>
-
-            <div className="mt-2 text-xs text-white/40">
-              {data.role}
-            </div>
-
-            <div className="mt-5 h-1 overflow-hidden rounded-full bg-white/5">
-
-              <div className="h-full w-[85%] rounded-full bg-gradient-to-r from-violet-500 to-cyan-400" />
-
-            </div>
-
-            <div className="mt-2 text-[9px] text-white/25">
-              Website configuration
-            </div>
-
-          </div>
-
-        </Card>
-
-      </div>
-
-
-      <Card>
-
-        <div className="flex items-center gap-3">
-
-          <div className="grid h-11 w-11 place-items-center rounded-xl bg-emerald-500/10">
-
-            <Activity
-              size={18}
-              className="text-emerald-400"
-            />
-
-          </div>
-
-          <div>
-
-            <h3 className="font-bold">
-              System Status
-            </h3>
-
-            <p className="text-xs text-white/35">
-              Everything is running normally.
-            </p>
-
-          </div>
-
-        </div>
-
-      </Card>
-
-    </div>
-  );
-}
-
-
-function PageTitle({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
-  return (
-    <div>
-
-      <h2 className="text-3xl font-black tracking-tight">
-        {title}
-      </h2>
-
-      <p className="mt-2 text-sm text-white/40">
-        {description}
-      </p>
-
-    </div>
-  );
-}
-
-
-function Card({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/[.035] p-5 backdrop-blur-xl lg:p-6">
-      {children}
-    </div>
-  );
-}
-
-
-function StatCard({
-  title,
-  value,
-  icon,
-  green = false,
-}: {
-  title: string;
-  value: string;
-  icon: React.ReactNode;
-  green?: boolean;
-}) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/[.035] p-5">
-
-      <div className="flex items-center justify-between">
-
-        <div className="grid h-10 w-10 place-items-center rounded-xl bg-violet-500/10">
-          {icon}
-        </div>
-
-        {green && (
-          <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_#34d399]" />
-        )}
-
-      </div>
-
-      <div className="mt-5 text-2xl font-black">
-        {value}
-      </div>
-
-      <div className="mt-1 text-xs text-white/35">
-        {title}
-      </div>
-
-    </div>
-  );
-}
-
-
-function QuickButton({
-  icon,
-  text,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  text: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[.03] p-4 text-left text-xs transition hover:bg-white/[.07]"
-    >
-      {icon}
-      <span>{text}</span>
-      <ChevronRight
-        size={14}
-        className="ml-auto text-white/25"
-      />
-    </button>
-  );
-}
-
-
-function Field({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div className="mb-5 last:mb-0">
-
-      <label className="mb-2 block text-xs text-white/45">
-        {label}
-      </label>
-
-      <input
-        value={value}
-        onChange={(e) =>
-          onChange(e.target.value)
-        }
-        className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none transition focus:border-violet-500"
-      />
-
-    </div>
-  );
-}
-
-
-function TextArea({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div className="mb-5 last:mb-0">
-
-      <label className="mb-2 block text-xs text-white/45">
-        {label}
-      </label>
-
-      <textarea
-        value={value}
-        onChange={(e) =>
-          onChange(e.target.value)
-        }
-        className="min-h-32 w-full resize-y rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm leading-6 outline-none transition focus:border-violet-500"
-      />
-
-    </div>
-  );
-}
-
-
-function Input({
-  placeholder,
-  value,
-  onChange,
-}: {
-  placeholder: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <input
-      placeholder={placeholder}
-      value={value}
-      onChange={(e) =>
-        onChange(e.target.value)
       }
-      className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none transition focus:border-violet-500"
-    />
-  );
-}
-
-
-function PreviewProfile({
-  data,
-}: {
-  data: SiteData;
-}) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/[.035] p-5">
-
-      <div className="mb-4 flex items-center gap-2">
-
-        <Eye size={17} />
-
-        <h3 className="font-bold">
-          Preview
-        </h3>
-
-      </div>
-
-
-      <div className="overflow-hidden rounded-2xl border border-white/10">
-
-        <img
-          src={data.profile}
-          alt={data.name}
-          className="h-72 w-full object-cover"
-        />
-
-        <div className="bg-black/40 p-5">
-
-          <div className="text-xl font-black">
-            {data.name}
-          </div>
-
-          <div className="mt-1 text-xs text-white/40">
-            {data.role}
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-  );
-}
-
-
-function SettingRow({
-  title,
-  description,
-  enabled,
-}: {
-  title: string;
-  description: string;
-  enabled: boolean;
-}) {
-  return (
-    <div className="flex items-center gap-4 rounded-xl border border-white/10 bg-black/10 p-4">
-
-      <div className="flex-1">
-
-        <div className="text-sm font-bold">
-          {title}
-        </div>
-
-        <div className="mt-1 text-xs text-white/35">
-          {description}
-        </div>
-
-      </div>
-
-      <div
-        className={`rounded-full px-3 py-1 text-[9px] ${
-          enabled
-            ? "bg-emerald-500/10 text-emerald-400"
-            : "bg-red-500/10 text-red-400"
-        }`}
-      >
-        {enabled ? "ON" : "OFF"}
-      </div>
-
-    </div>
-  );
-    }

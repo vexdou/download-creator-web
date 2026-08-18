@@ -1,4 +1,6 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   --background: #030406;
@@ -705,7 +707,6 @@ a:focus-visible {
 
 @supports (padding: env(safe-area-inset-bottom)) {
   body {
-    padding-bottom:
-      env(safe-area-inset-bottom);
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }

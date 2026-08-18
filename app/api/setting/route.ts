@@ -1,61 +1,99 @@
 import { NextResponse } from "next/server";
-import { v2 as cloudinary } from "cloudinary";
+import clientPromise from "@/lib/mongodb";
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+const defaultSettings = {
+  profile: {
+    name: "Vexdou",
+    description: "Building ideas into reality.",
+    photo: "/profile.jpg",
+  },
 
-export async function POST(request: Request) {
+  about:
+    "Welcome to my personal digital space.",
+
+  media: {
+    backgroundVideo: "/background.mp4",
+    music: "/music.mp3",
+  },
+
+  socials: {
+    tiktok: "",
+    instagram: "",
+    telegram: "",
+    whatsapp: "",
+    youtube: "",
+    github: "",
+  },
+
+  notifications: {
+    title: "",
+    message: "",
+    enabled: false,
+  },
+};
+
+export async function GET() {
   try {
-    const formData = await request.formData();
+    const client = await clientPromise;
 
-    const file = formData.get("file");
+    const db = client.db("vexdou");
 
-    if (!(file instanceof File)) {
-      return NextResponse.json(
-        { error: "No file uploaded" },
-        { status: 400 }
-      );
+    const settings = await db
+      .collection("settings")
+      .findOne({ type: "website" });
+
+    if (!settings) {
+      await db.collection("settings").insertOne({
+        type: "website",
+        ...defaultSettings,
+        updatedAt: new Date(),
+      });
+
+      return NextResponse.json(defaultSettings);
     }
 
-    const bytes = await file.arrayBuffer();
+    const { _id, type, ...data } = settings;
 
-    const buffer = Buffer.from(bytes);
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error("GET SETTINGS ERROR:", error);
 
-    const result = await new Promise<any>(
-      (resolve, reject) => {
-        const uploadStream =
-          cloudinary.uploader.upload_stream(
-            {
-              resource_type: "auto",
-              folder: "vexdou",
-            },
-            (error, result) => {
-              if (error) {
-                reject(error);
-              } else {
-                resolve(result);
-              }
-            }
-          );
+    return NextResponse.json(
+      { error: "Failed to load settings" },
+      { status: 500 }
+    );
+  }
+}
 
-        uploadStream.end(buffer);
-      }
+export async function PUT(request: Request) {
+  try {
+    const body = await request.json();
+
+    const client = await clientPromise;
+
+    const db = client.db("vexdou");
+
+    await db.collection("settings").updateOne(
+      { type: "website" },
+      {
+        $set: {
+          ...body,
+          type: "website",
+          updatedAt: new Date(),
+        },
+      },
+      { upsert: true }
     );
 
     return NextResponse.json({
       success: true,
-      url: result.secure_url,
-      public_id: result.public_id,
-      resource_type: result.resource_type,
+      message: "Settings saved successfully",
     });
   } catch (error) {
-    console.error("UPLOAD ERROR:", error);
+    console.error("PUT SETTINGS ERROR:", error);
 
     return NextResponse.json(
-      { error: "Upload failed" },
+      { error: "Failed to save settings" },
       { status: 500 }
     );
   }

@@ -59,7 +59,7 @@ export default function DownloadCreatorLanding() {
   const [simProgress, setSimProgress] = useState(0);
 
   // TELEGRAM MAIN BOT LINK (Halkan ku qor bot-kaaga rasmiga ah)
-  const MAIN_TELEGRAM_BOT_URL = "https://t.me/YourBotUsernameHere_bot";
+  const MAIN_TELEGRAM_BOT_URL = "https://t.me/Create_downloader_bot";
 
   const handleStartCreationSim = () => {
     setSimState("building");

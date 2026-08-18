@@ -1,312 +1,654 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import {
-  Instagram,
-  Mail,
-  Send,
-  MessageCircle,
-  MapPin,
-  Eye,
-  Settings,
-  X,
-  Save,
-  Globe,
-  Sparkles,
-} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 export default function Home() {
-  // Config state (defaults match your image)
-  const [profile, setProfile] = useState({
-    username: "vexdou",
-    subtitle: "SCHOLES",
-    location: "Sky",
-    views: 37,
-    avatarUrl: "/profile.jpg",
-    bgUrl: "https://assets.mixkit.co/videos/preview/mixkit-car-driving-on-a-road-at-sunset-41138-large.mp4",
-    bgType: "video", // 'video' or 'image'
-    tiktok: "https://tiktok.com/@vexdou",
-    email: "mailto:example@gmail.com",
-    instagram: "https://instagram.com/vexdou",
-    whatsapp: "https://wa.me/123456789",
-    telegram: "https://t.me/vexdou",
-  });
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const [isAdminOpen, setIsAdminOpen] = useState(false);
-  const [tempProfile, setTempProfile] = useState(profile);
+  const [playing, setPlaying] = useState(false);
 
-  // Load saved settings on startup
   useEffect(() => {
-    const saved = localStorage.getItem("vexdou_profile_data");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setProfile(parsed);
-        setTempProfile(parsed);
-      } catch (e) {
-        console.error("Could not load local profile data", e);
-      }
-    }
-  }, []);
+    const audio = audioRef.current;
 
-  const handleSave = () => {
-    setProfile(tempProfile);
-    localStorage.setItem("vexdou_profile_data", JSON.stringify(tempProfile));
-    setIsAdminOpen(false);
+    if (!audio) return;
+
+    audio.loop = true;
+
+    if (playing) {
+      audio.play().catch(() => {
+        setPlaying(false);
+      });
+    } else {
+      audio.pause();
+    }
+  }, [playing]);
+
+  const toggleMusic = () => {
+    setPlaying((value) => !value);
   };
 
   return (
-    <main className="relative min-h-screen w-full overflow-hidden bg-black font-sans text-white select-none">
-      {/* ================= BACKGROUND MEDIA ================= */}
-      <div className="absolute inset-0 z-0">
-        {profile.bgType === "video" ? (
-          <video
-            src={profile.bgUrl}
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="h-full w-full object-cover brightness-75 contrast-125"
-          />
-        ) : (
-          <img
-            src={profile.bgUrl}
-            alt="Background"
-            className="h-full w-full object-cover brightness-75 contrast-125"
-          />
-        )}
-        {/* Subtle grid and dark gradient overlay */}
-        <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/80" />
+    <main>
+      {/* =====================================================
+          BACKGROUND
+      ===================================================== */}
+
+      <div className="background">
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          aria-hidden="true"
+        >
+          <source src="/background.mp4" type="video/mp4" />
+        </video>
+
+        <div className="orb" />
+        <div className="orb two" />
       </div>
 
-      {/* ================= ADMIN TOGGLE BUTTON ================= */}
-      <button
-        onClick={() => setIsAdminOpen(true)}
-        className="fixed top-4 right-4 z-40 grid h-10 w-10 place-items-center rounded-full bg-black/50 text-white/70 backdrop-blur-md border border-white/10 transition hover:bg-black/80 hover:text-white"
-        title="Open Admin Panel"
-      >
-        <Settings size={18} />
-      </button>
+      {/* =====================================================
+          NAVBAR
+      ===================================================== */}
 
-      {/* ================= MAIN PROFILE CARD ================= */}
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-12 text-center">
-        {/* Profile Avatar */}
-        <div className="relative mb-5">
-          <div className="h-28 w-28 overflow-hidden rounded-full border-2 border-orange-500/50 shadow-[0_0_25px_rgba(249,115,22,0.4)]">
-            <img
-              src={profile.avatarUrl}
-              alt={profile.username}
-              className="h-full w-full object-cover"
-              onError={(e) => {
-                // Fallback avatar if link breaks
-                (e.target as HTMLImageElement).src =
-                  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80";
-              }}
-            />
+      <nav>
+        <a href="#" className="logo">
+          VEXDOU
+        </a>
+
+        <div className="nav-links">
+          <a href="#about">ABOUT</a>
+          <a href="#social">SOCIAL</a>
+          <a href="#projects">PROJECTS</a>
+          <a href="#updates">UPDATES</a>
+        </div>
+
+        <a href="/admin" className="admin-button">
+          ADMIN
+        </a>
+      </nav>
+
+      {/* =====================================================
+          HERO
+      ===================================================== */}
+
+      <section className="hero" id="home">
+        <div className="hero-content">
+          <div className="status">
+            <span className="status-dot" />
+            ONLINE • AVAILABLE
+          </div>
+
+          <img
+            src="/profile.jpg"
+            alt="Vexdou profile"
+            className="profile"
+          />
+
+          <div className="kicker">
+            WELCOME TO MY WORLD
+          </div>
+
+          <h1>VEXDOU</h1>
+
+          <p className="hero-description">
+            Welcome to my personal space. Discover my projects,
+            social platforms, latest updates and everything I am
+            building in one place.
+          </p>
+
+          <div className="hero-buttons">
+            <a href="#about" className="button primary">
+              EXPLORE
+            </a>
+
+            <a href="#social" className="button secondary">
+              MY SOCIALS
+            </a>
+          </div>
+
+          <div className="scroll-text">
+            SCROLL TO EXPLORE ↓
           </div>
         </div>
+      </section>
 
-        {/* Username */}
-        <h1 className="text-3xl font-extrabold tracking-wide text-amber-500 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
-          {profile.username}
-        </h1>
+      {/* =====================================================
+          ABOUT
+      ===================================================== */}
 
-        {/* Subtitle / Role */}
-        <p className="mt-1 text-sm font-bold tracking-[3px] uppercase text-orange-400 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
-          {profile.subtitle}
-        </p>
+      <section id="about">
+        <div className="about">
+          <div className="about-image">
+            <img
+              src="/profile.jpg"
+              alt="About Vexdou"
+            />
+          </div>
 
-        {/* Location Badge */}
-        <div className="mt-4 flex items-center gap-1.5 rounded-full bg-amber-500/20 px-3 py-1 border border-amber-500/30 text-amber-400 backdrop-blur-md shadow-lg">
-          <MapPin size={13} className="fill-amber-400 text-amber-400" />
-          <span className="text-xs font-semibold">{profile.location}</span>
+          <div className="about-text">
+            <div className="eyebrow">
+              ABOUT ME
+            </div>
+
+            <h2>
+              Building ideas
+              <br />
+              into <span>reality.</span>
+            </h2>
+
+            <p>
+              Hey, I&apos;m Vexdou. This is my personal
+              digital space where I share my work, projects,
+              ideas and the things I am currently creating.
+            </p>
+
+            <p>
+              I enjoy technology, creative projects,
+              websites, automation and building things
+              that people can actually use.
+            </p>
+
+            <p>
+              Everything you see here can be connected to
+              my different platforms and projects.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* =====================================================
+          WHAT I DO
+      ===================================================== */}
+
+      <section>
+        <div className="eyebrow">
+          WHAT I DO
         </div>
 
-        {/* Social Icons Row */}
-        <div className="mt-8 flex items-center justify-center gap-3">
-          {/* TikTok */}
-          <a
-            href={profile.tiktok}
-            target="_blank"
-            rel="noreferrer"
-            className="grid h-11 w-11 place-items-center rounded-xl bg-white/10 text-white backdrop-blur-md border border-white/20 transition hover:scale-110 hover:bg-white/20"
-          >
-            <Sparkles size={20} />
-          </a>
+        <h2 className="section-title">
+          Creating digital experiences.
+        </h2>
 
-          {/* Email */}
+        <p className="section-description">
+          A few things I enjoy working on and exploring.
+        </p>
+
+        <div className="cards">
+          <div className="card">
+            <div className="card-icon">💻</div>
+
+            <h3>Web Development</h3>
+
+            <p>
+              Modern websites and digital experiences
+              designed to look great and work smoothly.
+            </p>
+          </div>
+
+          <div className="card">
+            <div className="card-icon">⚡</div>
+
+            <h3>Automation</h3>
+
+            <p>
+              Building useful systems and tools that
+              simplify repetitive tasks.
+            </p>
+          </div>
+
+          <div className="card">
+            <div className="card-icon">🚀</div>
+
+            <h3>Creative Projects</h3>
+
+            <p>
+              Turning ideas into unique digital projects,
+              experiments and products.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* =====================================================
+          SOCIALS
+      ===================================================== */}
+
+      <section
+        className="social-section"
+        id="social"
+      >
+        <div className="eyebrow">
+          FIND ME ONLINE
+        </div>
+
+        <h2 className="section-title">
+          Let&apos;s connect.
+        </h2>
+
+        <p className="section-description">
+          Follow me across my platforms and stay connected
+          with what I&apos;m creating.
+        </p>
+
+        <div className="social-grid">
+
+          {/* TikTok */}
+
           <a
-            href={profile.email}
-            className="grid h-11 w-11 place-items-center rounded-xl bg-white/10 text-white backdrop-blur-md border border-white/20 transition hover:scale-110 hover:bg-white/20"
+            href="https://www.tiktok.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="social"
           >
-            <Mail size={20} />
+            <div className="social-icon">
+              ♪
+            </div>
+
+            <div>
+              <b>TikTok</b>
+
+              <small>
+                Follow me on TikTok
+              </small>
+            </div>
+
+            <span className="arrow">
+              ↗
+            </span>
           </a>
 
           {/* Instagram */}
-          <a
-            href={profile.instagram}
-            target="_blank"
-            rel="noreferrer"
-            className="grid h-11 w-11 place-items-center rounded-xl bg-white/10 text-white backdrop-blur-md border border-white/20 transition hover:scale-110 hover:bg-white/20"
-          >
-            <Instagram size={20} />
-          </a>
 
-          {/* WhatsApp */}
           <a
-            href={profile.whatsapp}
+            href="https://www.instagram.com/"
             target="_blank"
-            rel="noreferrer"
-            className="grid h-11 w-11 place-items-center rounded-xl bg-green-500 text-white shadow-[0_0_15px_rgba(34,197,94,0.5)] transition hover:scale-110"
+            rel="noopener noreferrer"
+            className="social"
           >
-            <MessageCircle size={20} />
+            <div className="social-icon">
+              ◎
+            </div>
+
+            <div>
+              <b>Instagram</b>
+
+              <small>
+                Follow me on Instagram
+              </small>
+            </div>
+
+            <span className="arrow">
+              ↗
+            </span>
           </a>
 
           {/* Telegram */}
+
           <a
-            href={profile.telegram}
+            href="https://t.me/"
             target="_blank"
-            rel="noreferrer"
-            className="grid h-11 w-11 place-items-center rounded-xl bg-sky-500 text-white shadow-[0_0_15px_rgba(14,165,233,0.5)] transition hover:scale-110"
+            rel="noopener noreferrer"
+            className="social"
           >
-            <Send size={18} className="-translate-x-0.5 translate-y-0.5" />
+            <div className="social-icon">
+              ➤
+            </div>
+
+            <div>
+              <b>Telegram</b>
+
+              <small>
+                Join my Telegram
+              </small>
+            </div>
+
+            <span className="arrow">
+              ↗
+            </span>
           </a>
-        </div>
 
-        {/* View Count Badge (Bottom Left style) */}
-        <div className="absolute bottom-6 left-6 flex items-center gap-1.5 text-xs text-amber-500/80 font-medium">
-          <Eye size={15} />
-          <span>{profile.views}</span>
-        </div>
-      </div>
+          {/* WhatsApp */}
 
-      {/* ================= ADMIN PANEL MODAL ================= */}
-      {isAdminOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-lg">
-          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-white/15 bg-[#121318] p-6 text-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-white/10 pb-4">
-              <h2 className="text-lg font-bold text-amber-400">Admin Panel</h2>
-              <button
-                onClick={() => setIsAdminOpen(false)}
-                className="rounded-full p-1 text-white/50 hover:bg-white/10 hover:text-white"
-              >
-                <X size={20} />
-              </button>
+          <a
+            href="https://wa.me/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="social"
+          >
+            <div className="social-icon">
+              ◉
             </div>
 
-            <div className="mt-5 space-y-4 text-xs">
-              <div>
-                <label className="block text-white/60 mb-1">Username</label>
-                <input
-                  type="text"
-                  value={tempProfile.username}
-                  onChange={(e) =>
-                    setTempProfile({ ...tempProfile, username: e.target.value })
-                  }
-                  className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-white outline-none focus:border-amber-400"
-                />
-              </div>
+            <div>
+              <b>WhatsApp</b>
 
-              <div>
-                <label className="block text-white/60 mb-1">Subtitle</label>
-                <input
-                  type="text"
-                  value={tempProfile.subtitle}
-                  onChange={(e) =>
-                    setTempProfile({ ...tempProfile, subtitle: e.target.value })
-                  }
-                  className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-white outline-none focus:border-amber-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-white/60 mb-1">Location</label>
-                <input
-                  type="text"
-                  value={tempProfile.location}
-                  onChange={(e) =>
-                    setTempProfile({ ...tempProfile, location: e.target.value })
-                  }
-                  className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-white outline-none focus:border-amber-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-white/60 mb-1">Avatar Image URL</label>
-                <input
-                  type="text"
-                  value={tempProfile.avatarUrl}
-                  onChange={(e) =>
-                    setTempProfile({ ...tempProfile, avatarUrl: e.target.value })
-                  }
-                  className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-white outline-none focus:border-amber-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-white/60 mb-1">Background Media URL (Video / Image)</label>
-                <input
-                  type="text"
-                  value={tempProfile.bgUrl}
-                  onChange={(e) =>
-                    setTempProfile({ ...tempProfile, bgUrl: e.target.value })
-                  }
-                  className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-white outline-none focus:border-amber-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-white/60 mb-1">Background Type</label>
-                <select
-                  value={tempProfile.bgType}
-                  onChange={(e) =>
-                    setTempProfile({ ...tempProfile, bgType: e.target.value })
-                  }
-                  className="w-full rounded-xl border border-white/10 bg-[#1e2028] p-3 text-white outline-none focus:border-amber-400"
-                >
-                  <option value="video">Video</option>
-                  <option value="image">Image</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-white/60 mb-1">WhatsApp URL</label>
-                <input
-                  type="text"
-                  value={tempProfile.whatsapp}
-                  onChange={(e) =>
-                    setTempProfile({ ...tempProfile, whatsapp: e.target.value })
-                  }
-                  className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-white outline-none focus:border-amber-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-white/60 mb-1">Telegram URL</label>
-                <input
-                  type="text"
-                  value={tempProfile.telegram}
-                  onChange={(e) =>
-                    setTempProfile({ ...tempProfile, telegram: e.target.value })
-                  }
-                  className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-white outline-none focus:border-amber-400"
-                />
-              </div>
+              <small>
+                Contact me on WhatsApp
+              </small>
             </div>
 
-            <div className="mt-6 flex gap-3">
-              <button
-                onClick={handleSave}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-amber-500 py-3 font-bold text-black transition hover:bg-amber-400"
-              >
-                <Save size={16} />
-                Save Changes
-              </button>
+            <span className="arrow">
+              ↗
+            </span>
+          </a>
+
+          {/* YouTube */}
+
+          <a
+            href="https://www.youtube.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="social"
+          >
+            <div className="social-icon">
+              ▶
+            </div>
+
+            <div>
+              <b>YouTube</b>
+
+              <small>
+                Watch my videos
+              </small>
+            </div>
+
+            <span className="arrow">
+              ↗
+            </span>
+          </a>
+
+          {/* GitHub */}
+
+          <a
+            href="https://github.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="social"
+          >
+            <div className="social-icon">
+              ◈
+            </div>
+
+            <div>
+              <b>GitHub</b>
+
+              <small>
+                Explore my projects
+              </small>
+            </div>
+
+            <span className="arrow">
+              ↗
+            </span>
+          </a>
+
+        </div>
+      </section>
+
+      {/* =====================================================
+          PROJECTS
+      ===================================================== */}
+
+      <section id="projects">
+        <div className="eyebrow">
+          MY WORK
+        </div>
+
+        <h2 className="section-title">
+          Selected projects.
+        </h2>
+
+        <p className="section-description">
+          Some of the things I&apos;m building and working on.
+        </p>
+
+        <div>
+
+          <div className="project">
+            <div className="project-number">
+              01
+            </div>
+
+            <div>
+              <div className="project-tag">
+                WEB PLATFORM
+              </div>
+
+              <h3>
+                VEXDOU Platform
+              </h3>
+
+              <p>
+                A modern personal platform designed to
+                bring my projects, content and social
+                presence together.
+              </p>
+            </div>
+
+            <div className="project-arrow">
+              ↗
             </div>
           </div>
+
+          <div className="project">
+            <div className="project-number">
+              02
+            </div>
+
+            <div>
+              <div className="project-tag">
+                AUTOMATION
+              </div>
+
+              <h3>
+                Smart Systems
+              </h3>
+
+              <p>
+                Useful automation systems and tools
+                designed to make digital workflows easier.
+              </p>
+            </div>
+
+            <div className="project-arrow">
+              ↗
+            </div>
+          </div>
+
+          <div className="project">
+            <div className="project-number">
+              03
+            </div>
+
+            <div>
+              <div className="project-tag">
+                CREATIVE
+              </div>
+
+              <h3>
+                Future Ideas
+              </h3>
+
+              <p>
+                Experimental projects and new ideas that
+                are currently being developed.
+              </p>
+            </div>
+
+            <div className="project-arrow">
+              ↗
+            </div>
+          </div>
+
         </div>
-      )}
+      </section>
+
+      {/* =====================================================
+          UPDATES
+      ===================================================== */}
+
+      <section id="updates">
+        <div className="eyebrow">
+          LATEST
+        </div>
+
+        <h2 className="section-title">
+          Recent updates.
+        </h2>
+
+        <p className="section-description">
+          News, announcements and things I&apos;m currently
+          working on.
+        </p>
+
+        <div className="updates">
+
+          <article className="update">
+            <div className="date">
+              AUG 2026
+            </div>
+
+            <h3>
+              New website is live.
+            </h3>
+
+            <p>
+              Welcome to the new Vexdou platform. More
+              features and content are coming soon.
+            </p>
+          </article>
+
+          <article className="update">
+            <div className="date">
+              PROJECT
+            </div>
+
+            <h3>
+              Building something new.
+            </h3>
+
+            <p>
+              A new digital project is currently being
+              developed behind the scenes.
+            </p>
+          </article>
+
+          <article className="update">
+            <div className="date">
+              SOON
+            </div>
+
+            <h3>
+              More updates coming.
+            </h3>
+
+            <p>
+              Stay connected through my social platforms
+              for the latest news.
+            </p>
+          </article>
+
+        </div>
+      </section>
+
+      {/* =====================================================
+          CTA
+      ===================================================== */}
+
+      <section>
+        <div className="cta">
+          <div className="eyebrow">
+            STAY CONNECTED
+          </div>
+
+          <h2>
+            See you around.
+          </h2>
+
+          <p>
+            Follow me on social media and keep up with
+            everything I&apos;m creating.
+          </p>
+
+          <div className="hero-buttons">
+            <a
+              href="#social"
+              className="button primary"
+            >
+              CONNECT WITH ME
+            </a>
+
+            <a
+              href="#home"
+              className="button secondary"
+            >
+              BACK TO TOP ↑
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* =====================================================
+          MUSIC PLAYER
+      ===================================================== */}
+
+      <audio
+        ref={audioRef}
+        src="/music.mp3"
+        preload="auto"
+      />
+
+      <div className="music-player">
+        <img
+          src="/profile.jpg"
+          alt="Music"
+          className="music-cover"
+        />
+
+        <div className="music-info">
+          <span className="music-label">
+            NOW PLAYING
+          </span>
+
+          <span className="music-title">
+            Vexdou — My Background Music
+          </span>
+
+          <div className="music-progress">
+            <span />
+          </div>
+        </div>
+
+        <button
+          type="button"
+          className="play-button"
+          onClick={toggleMusic}
+          aria-label={
+            playing
+              ? "Pause music"
+              : "Play music"
+          }
+        >
+          {playing ? "Ⅱ" : "▶"}
+        </button>
+      </div>
+
+      {/* =====================================================
+          FOOTER
+      ===================================================== */}
+
+      <footer>
+        <span>
+          © 2026 VEXDOU
+        </span>
+
+        <span>
+          BUILT WITH PASSION
+        </span>
+      </footer>
     </main>
   );
-}
+      }

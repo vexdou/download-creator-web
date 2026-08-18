@@ -238,7 +238,7 @@ export default function Home() {
           {/* TikTok */}
 
           <a
-            href="https://www.tiktok.com/"
+            href="https://www.tiktok.com/@vexdou"
             target="_blank"
             rel="noopener noreferrer"
             className="social"
@@ -263,7 +263,7 @@ export default function Home() {
           {/* Instagram */}
 
           <a
-            href="https://www.instagram.com/"
+            href="https://www.instagram.com/@vexdou"
             target="_blank"
             rel="noopener noreferrer"
             className="social"
@@ -288,7 +288,7 @@ export default function Home() {
           {/* Telegram */}
 
           <a
-            href="https://t.me/"
+            href="https://t.me/@vexdou"
             target="_blank"
             rel="noopener noreferrer"
             className="social"
@@ -313,7 +313,7 @@ export default function Home() {
           {/* WhatsApp */}
 
           <a
-            href="https://wa.me/"
+            href="https://wa.me/+14504066880"
             target="_blank"
             rel="noopener noreferrer"
             className="social"

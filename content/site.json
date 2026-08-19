@@ -1,0 +1,24 @@
+{
+  "profile": {
+    "name": "Vexdou",
+    "description": "Building ideas into reality.",
+    "photo": "/profile.jpg"
+  },
+  "about": "Welcome to my personal digital space. I enjoy technology, creative projects and building useful digital experiences.",
+  "media": {
+    "backgroundVideo": "/background.mp4",
+    "music": "/music.mp3"
+  },
+  "socials": {
+    "tiktok": "https://www.tiktok.com/@Vexdou",
+    "instagram": "https://www.instagram.com/Vexdou/",
+    "whatsapp": "https://wa.me/14504066880",
+    "telegram": "https://t.me/Vexdou"
+  },
+  "notifications": {
+    "title": "",
+    "message": "",
+    "enabled": false
+  },
+  "customTexts": []
+}

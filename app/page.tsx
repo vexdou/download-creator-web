@@ -26,6 +26,10 @@ export default function HomePage() {
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileIndex, setProfileIndex] = useState(0);
+  const [email, setEmail] = useState("");
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailStatus, setEmailStatus] = useState("");
+  const [emailSuccess, setEmailSuccess] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const musicStartedRef = useRef(false);
 
@@ -43,7 +47,36 @@ export default function HomePage() {
     start(); window.addEventListener("pointerdown", start, { once: true, passive: true }); window.addEventListener("keydown", start, { once: true });
     return () => { window.removeEventListener("pointerdown", start); window.removeEventListener("keydown", start); };
   }, [musicUrl]);
+
   const toggleMusic = async () => { const audio = audioRef.current; if (!audio) return; if (audio.paused) { try { await audio.play(); musicStartedRef.current = true; setMusicPlaying(true); } catch { setMusicPlaying(false); } } else { audio.pause(); musicStartedRef.current = true; setMusicPlaying(false); } };
+
+  const sendVexdouEmail = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setEmailStatus("");
+    setEmailSuccess(false);
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !/^\S+@\S+\.\S+$/.test(cleanEmail)) {
+      setEmailStatus("Please enter a valid Gmail or email address.");
+      return;
+    }
+    setEmailSending(true);
+    try {
+      const response = await fetch("/api/email/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: cleanEmail })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.message || "Email could not be sent.");
+      setEmailSuccess(true);
+      setEmailStatus(data.message || "Your Vexdou email has been sent. Check your inbox.");
+      setEmail("");
+    } catch (error) {
+      setEmailStatus(error instanceof Error ? error.message : "Email could not be sent right now.");
+    } finally {
+      setEmailSending(false);
+    }
+  };
 
   const profile = settings.profile, media = settings.media, socials = settings.socials || {}, notification = settings.notifications || {};
   const platforms = [["TikTok", socials.tiktok], ["Instagram", socials.instagram], ["Telegram", socials.telegram], ["WhatsApp", socials.whatsapp]].filter(([, url]) => Boolean(url));
@@ -64,6 +97,27 @@ export default function HomePage() {
     <section className="section" id="projects"><div className="card"><span className="section-label">PROJECTS</span><h2>Built for the future.</h2><p>Digital products, websites, bots and experimental ideas built with modern technology.</p></div></section>
     <section className="section" id="skills"><div className="card"><span className="section-label">TECHNOLOGY</span><h2>Technology.</h2><p>Web development, automation, AI, Telegram bots, creative digital experiences and software projects.</p></div></section>
     {settings.customTexts.length > 0 && <section className="section"><div className="card"><span className="section-label">UPDATES</span><h2>My notes.</h2>{settings.customTexts.map(item => <article key={item.id} className="custom-text-card">{item.title && <h3>{item.title}</h3>}<p>{item.text}</p></article>)}</div></section>}
+
+    <section className="section email-section" id="email">
+      <div className="card email-card">
+        <div className="email-orbit">✦</div>
+        <span className="section-label">VEXDOU EMAIL</span>
+        <h2>Stay connected.</h2>
+        <p>Enter your Gmail or email address and Vexdou will send you a beautifully designed personal message introducing the platform, its vision and the digital experience we're building.</p>
+        <form className="email-form" onSubmit={sendVexdouEmail}>
+          <label htmlFor="vexdou-email">Your email address</label>
+          <div className="email-input-wrap">
+            <span className="email-symbol">@</span>
+            <input id="vexdou-email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@gmail.com" autoComplete="email" required disabled={emailSending} />
+            <button type="submit" disabled={emailSending}>{emailSending ? "Sending..." : "Send Email →"}</button>
+          </div>
+          <div className="email-hint">A single Vexdou introduction email will be sent to the address you provide.</div>
+        </form>
+        {emailStatus && <div className={emailSuccess ? "email-status success" : "email-status error"}>{emailSuccess ? "✓" : "!"} {emailStatus}</div>}
+        <div className="email-highlights"><span>✦ Personal message</span><span>⚡ HTML design</span><span>🌐 Vexdou.space</span></div>
+      </div>
+    </section>
+
     <section className="section" id="contact"><div className="card"><span className="section-label">CONNECT</span><h2>Let's connect.</h2><p>Connect with Vexdou through your favorite platform.</p><div className="buttons contact-buttons">{platforms.map(([name, url]) => <a key={name} className="btn btn-primary" href={url} target="_blank" rel="noopener noreferrer">{name} →</a>)}</div><div className="social-grid-mini">{extraSocials.map(([name, url]) => <a key={name} href={url} target="_blank" rel="noopener noreferrer">{name} ↗</a>)}</div></div></section>
     <footer><div className="footer-logo">VEXDOU.SPACE</div><span>© 2026 VEXDOU.SPACE — ALL RIGHTS RESERVED.</span><div className="customer-support"><a href="mailto:costumer@vexdou.space">costumer@vexdou.space</a><small>Official Customer Support · Trusted & Secure Service</small></div></footer>
     <button className={musicPlaying ? "music-player playing" : "music-player"} onClick={toggleMusic} aria-label={musicPlaying ? "Pause music" : "Play music"} aria-pressed={musicPlaying}><span className="music-cover"><img src={profile.photo || "/profile.jpg"} alt="Music cover" /></span><span className="music-info"><strong>VEXDOU • My Music</strong><small>{musicPlaying ? "Now playing" : "Tap to listen"}</small></span><span className="music-button">{musicPlaying ? "Ⅱ" : "▶"}</span></button>

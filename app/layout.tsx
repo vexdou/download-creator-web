@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./email-styles.css";
 
 export const metadata: Metadata = {
   title: "VEXDOU — Digital World",

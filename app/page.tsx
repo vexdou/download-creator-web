@@ -6,7 +6,7 @@ type CustomText = { id: string; title: string; text: string };
 type Settings = { profile: { name?: string; description?: string; photo?: string; photos?: string[] }; about?: string; media: { backgroundVideo?: string; music?: string }; socials: Record<string, string>; notifications: { title?: string; message?: string; enabled?: boolean }; customTexts: CustomText[] };
 
 const defaults: Settings = {
-  profile: { name: "Vexdou", description: "Building ideas into reality.", photo: "/profile.jpg", photos: [] },
+  profile: { name: "Vexdou", description: "Building ideas into reality.", photo: "/profile.jpg", photos: ["/profile1.jpg", "/profile2.jpg"] },
   about: "Welcome to my personal digital space.",
   media: { backgroundVideo: "/background.mp4", music: "/music.mp3" },
   socials: { tiktok: "https://www.tiktok.com/@Vexdou", instagram: "https://www.instagram.com/Vexdou/", whatsapp: "https://wa.me/14504066880", telegram: "https://t.me/Vexdou" },
@@ -30,11 +30,11 @@ export default function HomePage() {
   const musicStartedRef = useRef(false);
 
   useEffect(() => {
-    fetch("/api/setting", { cache: "no-store" }).then(async r => r.ok ? r.json() : Promise.reject()).then(data => setSettings({ ...defaults, ...data, profile: { ...defaults.profile, ...(data.profile || {}) }, media: { ...defaults.media, ...(data.media || {}) }, notifications: { ...defaults.notifications, ...(data.notifications || {}) }, socials: { ...defaults.socials, ...(data.socials || {}) }, customTexts: Array.isArray(data.customTexts) ? data.customTexts : [] })).catch(() => setSettings(defaults)).finally(() => setLoading(false));
+    fetch("/api/setting", { cache: "no-store" }).then(async r => r.ok ? r.json() : Promise.reject()).then(data => setSettings({ ...defaults, ...data, profile: { ...defaults.profile, ...(data.profile || {}), photos: Array.isArray(data.profile?.photos) && data.profile.photos.length ? data.profile.photos : defaults.profile.photos }, media: { ...defaults.media, ...(data.media || {}) }, notifications: { ...defaults.notifications, ...(data.notifications || {}) }, socials: { ...defaults.socials, ...(data.socials || {}) }, customTexts: Array.isArray(data.customTexts) ? data.customTexts : [] })).catch(() => setSettings(defaults)).finally(() => setLoading(false));
   }, []);
 
   const profileImages = Array.from(new Set([settings.profile.photo || "/profile.jpg", ...(settings.profile.photos || [])].filter(Boolean))).slice(0, 3);
-  useEffect(() => { const timer = window.setInterval(() => setProfileIndex(i => (i + 1) % profileImages.length), 3000); return () => window.clearInterval(timer); }, [profileImages.length]);
+  useEffect(() => { setProfileIndex(0); const timer = window.setInterval(() => setProfileIndex(i => (i + 1) % Math.max(profileImages.length, 1)), 3000); return () => window.clearInterval(timer); }, [profileImages.length]);
 
   const musicUrl = settings.media.music || "/music.mp3";
   useEffect(() => {

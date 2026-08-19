@@ -209,6 +209,10 @@ export default function HomePage() {
       <footer>
         <div className="footer-logo">VEXDOU</div>
         <span>© 2026 VEXDOU. ALL RIGHTS RESERVED.</span>
+        <div className="customer-support">
+          <a href="mailto:costumer@vexdou.space">costumer@vexdou.space</a>
+          <small>Official Customer Support · Trusted & Secure Service</small>
+        </div>
         <button className={musicPlaying ? "sound-button music-control playing" : "sound-button music-control"} onClick={toggleMusic} aria-label={musicPlaying ? "Pause music" : "Play music"} aria-pressed={musicPlaying}>
           <span className="music-icon" aria-hidden="true">{musicPlaying ? "Ⅱ" : "▶"}</span>
           <span>{musicPlaying ? "PAUSE MUSIC" : "PLAY MUSIC"}</span>

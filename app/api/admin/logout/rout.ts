@@ -1,0 +1,23 @@
+import { NextResponse } from "next/server";
+import { ADMIN_COOKIE } from "../../../../lib/auth";
+
+export const runtime = "nodejs";
+
+export async function POST() {
+  const response = NextResponse.json({ success: true });
+  response.cookies.set(ADMIN_COOKIE, "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/",
+    maxAge: 0,
+  });
+  response.cookies.set("vexdou_admin", "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/",
+    maxAge: 0,
+  });
+  return response;
+}

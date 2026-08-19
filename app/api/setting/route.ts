@@ -30,13 +30,22 @@ const defaultSettings = {
   },
 };
 
-const text = (value: unknown, max: number): string => {
+const socialKeys = [
+  "tiktok",
+  "instagram",
+  "telegram",
+  "whatsapp",
+  "youtube",
+  "github",
+] as const;
+
+function cleanText(value: unknown, max: number): string {
   if (typeof value !== "string") return "";
   return value.trim().slice(0, max);
-};
+}
 
-const safeUrl = (value: unknown): string => {
-  const raw = text(value, 2048);
+function cleanUrl(value: unknown): string {
+  const raw = cleanText(value, 2048);
 
   if (!raw) return "";
 
@@ -51,7 +60,19 @@ const safeUrl = (value: unknown): string => {
   } catch {
     return "";
   }
-};
+}
+
+function objectValue(value: unknown): Record<string, unknown> {
+  if (
+    value &&
+    typeof value === "object" &&
+    !Array.isArray(value)
+  ) {
+    return value as Record<string, unknown>;
+  }
+
+  return {};
+}
 
 export async function GET() {
   try {
@@ -67,8 +88,8 @@ export async function GET() {
         { type: "website" },
         {
           $setOnInsert: {
-            type: "website",
             ...defaultSettings,
+            type: "website",
             updatedAt: new Date(),
           },
         },
@@ -78,12 +99,11 @@ export async function GET() {
       return NextResponse.json(defaultSettings);
     }
 
-    const {
-      _id: _ignoredId,
-      type: _ignoredType,
-      updatedAt: _ignoredUpdatedAt,
-      ...data
-    } = settings;
+    const data = { ...settings } as Record<string, unknown>;
+
+    delete data._id;
+    delete data.type;
+    delete data.updatedAt;
 
     return NextResponse.json(data);
   } catch (error) {
@@ -115,7 +135,20 @@ export async function PUT(request: Request) {
       );
     }
 
-    const body: unknown = await request.json();
+    let body: unknown;
+
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        {
+          error: "Invalid JSON request",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
 
     if (
       !body ||
@@ -136,132 +169,140 @@ export async function PUT(request: Request) {
 
     const client = await clientPromise;
     const db = client.db("vexdou");
+    const collection = db.collection("settings");
 
-    const existing = await db
-      .collection("settings")
-      .findOne({ type: "website" });
+    const existing = await collection.findOne({
+      type: "website",
+    });
 
-    const current = existing || defaultSettings;
+    const current =
+      (existing as Record<string, unknown> | null) ||
+      defaultSettings;
 
-    const currentProfile =
-      current.profile && typeof current.profile === "object"
-        ? current.profile as Record<string, unknown>
-        : {};
-
-    const currentMedia =
-      current.media && typeof current.media === "object"
-        ? current.media as Record<string, unknown>
-        : {};
-
-    const currentSocials =
-      current.socials && typeof current.socials === "object"
-        ? current.socials as Record<string, unknown>
-        : {};
-
+    const currentProfile = objectValue(current.profile);
+    const currentMedia = objectValue(current.media);
+    const currentSocials = objectValue(current.socials);
     const currentNotifications =
-      current.notifications &&
-      typeof current.notifications === "object"
-        ? current.notifications as Record<string, unknown>
-        : {};
+      objectValue(current.notifications);
 
-    const inputProfile =
-      input.profile && typeof input.profile === "object"
-        ? input.profile as Record<string, unknown>
-        : {};
-
-    const inputMedia =
-      input.media && typeof input.media === "object"
-        ? input.media as Record<string, unknown>
-        : {};
-
-    const inputSocials =
-      input.socials && typeof input.socials === "object"
-        ? input.socials as Record<string, unknown>
-        : {};
-
+    const inputProfile = objectValue(input.profile);
+    const inputMedia = objectValue(input.media);
+    const inputSocials = objectValue(input.socials);
     const inputNotifications =
-      input.notifications &&
-      typeof input.notifications === "object"
-        ? input.notifications as Record<string, unknown>
-        : {};
+      objectValue(input.notifications);
+
+    const socials: Record<string, string> = {};
+
+    for (const key of socialKeys) {
+      if (inputSocials[key] !== undefined) {
+        const value = cleanUrl(inputSocials[key]);
+
+        if (inputSocials[key] && !value) {
+          return NextResponse.json(
+            {
+              error: `Invalid ${key} URL. Use a valid HTTPS URL.`,
+            },
+            {
+              status: 400,
+            }
+          );
+        }
+
+        socials[key] = value;
+      } else {
+        socials[key] = cleanUrl(
+          currentSocials[key]
+        );
+      }
+    }
 
     const update = {
+      type: "website",
+
       profile: {
         name:
-          text(inputProfile.name, 80) ||
-          text(currentProfile.name, 80) ||
-          defaultSettings.profile.name,
+          inputProfile.name !== undefined
+            ? cleanText(inputProfile.name, 80) ||
+              "Vexdou"
+            : cleanText(currentProfile.name, 80) ||
+              "Vexdou",
 
         description:
-          typeof inputProfile.description === "string"
-            ? text(inputProfile.description, 300)
-            : text(currentProfile.description, 300),
+          inputProfile.description !== undefined
+            ? cleanText(
+                inputProfile.description,
+                300
+              )
+            : cleanText(
+                currentProfile.description,
+                300
+              ),
 
         photo:
-          text(inputProfile.photo, 2048) ||
-          text(currentProfile.photo, 2048) ||
-          defaultSettings.profile.photo,
+          inputProfile.photo !== undefined
+            ? cleanText(
+                inputProfile.photo,
+                2048
+              ) || "/profile.jpg"
+            : cleanText(
+                currentProfile.photo,
+                2048
+              ) || "/profile.jpg",
       },
 
       about:
-        typeof input.about === "string"
-          ? text(input.about, 5000)
-          : text(current.about, 5000),
+        input.about !== undefined
+          ? cleanText(input.about, 5000)
+          : cleanText(current.about, 5000),
 
       media: {
         backgroundVideo:
-          text(inputMedia.backgroundVideo, 2048) ||
-          text(currentMedia.backgroundVideo, 2048) ||
-          defaultSettings.media.backgroundVideo,
+          inputMedia.backgroundVideo !== undefined
+            ? cleanText(
+                inputMedia.backgroundVideo,
+                2048
+              )
+            : cleanText(
+                currentMedia.backgroundVideo,
+                2048
+              ) || "/background.mp4",
 
         music:
-          text(inputMedia.music, 2048) ||
-          text(currentMedia.music, 2048) ||
-          defaultSettings.media.music,
+          inputMedia.music !== undefined
+            ? cleanText(
+                inputMedia.music,
+                2048
+              )
+            : cleanText(
+                currentMedia.music,
+                2048
+              ) || "/music.mp3",
       },
 
-      socials: {
-        tiktok:
-          inputSocials.tiktok !== undefined
-            ? safeUrl(inputSocials.tiktok)
-            : safeUrl(currentSocials.tiktok),
-
-        instagram:
-          inputSocials.instagram !== undefined
-            ? safeUrl(inputSocials.instagram)
-            : safeUrl(currentSocials.instagram),
-
-        telegram:
-          inputSocials.telegram !== undefined
-            ? safeUrl(inputSocials.telegram)
-            : safeUrl(currentSocials.telegram),
-
-        whatsapp:
-          inputSocials.whatsapp !== undefined
-            ? safeUrl(inputSocials.whatsapp)
-            : safeUrl(currentSocials.whatsapp),
-
-        youtube:
-          inputSocials.youtube !== undefined
-            ? safeUrl(inputSocials.youtube)
-            : safeUrl(currentSocials.youtube),
-
-        github:
-          inputSocials.github !== undefined
-            ? safeUrl(inputSocials.github)
-            : safeUrl(currentSocials.github),
-      },
+      socials,
 
       notifications: {
         title:
           inputNotifications.title !== undefined
-            ? text(inputNotifications.title, 160)
-            : text(currentNotifications.title, 160),
+            ? cleanText(
+                inputNotifications.title,
+                160
+              )
+            : cleanText(
+                currentNotifications.title,
+                160
+              ),
 
         message:
           inputNotifications.message !== undefined
-            ? text(inputNotifications.message, 2000)
-            : text(currentNotifications.message, 2000),
+            ? cleanText(
+                inputNotifications.message,
+                2000
+              )
+            : cleanText(
+                currentNotifications.message,
+                2000
+              ),
 
         enabled:
           inputNotifications.enabled !== undefined
@@ -269,12 +310,13 @@ export async function PUT(request: Request) {
             : currentNotifications.enabled === true,
       },
 
-      type: "website",
       updatedAt: new Date(),
     };
 
-    await db.collection("settings").updateOne(
-      { type: "website" },
+    await collection.updateOne(
+      {
+        type: "website",
+      },
       {
         $set: update,
       },
@@ -286,27 +328,21 @@ export async function PUT(request: Request) {
     return NextResponse.json({
       success: true,
       message: "Settings saved successfully",
-      settings: update,
     });
   } catch (error) {
-    console.error("PUT SETTINGS ERROR:", error);
-
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Unknown server error";
+    console.error(
+      "PUT SETTINGS ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
-        error: "Failed to save settings",
-        details:
-          process.env.NODE_ENV === "development"
-            ? message
-            : undefined,
+        error:
+          "Database error while saving settings",
       },
       {
         status: 500,
       }
     );
   }
-      }
+}

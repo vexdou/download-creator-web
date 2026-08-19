@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type CustomText = { id: string; title: string; text: string };
 type Settings = {
@@ -29,8 +29,10 @@ const defaults: Settings = {
 export default function HomePage() {
   const [settings, setSettings] = useState<Settings>(defaults);
   const [loading, setLoading] = useState(true);
-  const [muted, setMuted] = useState(true);
+  const [musicPlaying, setMusicPlaying] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const musicStartedRef = useRef(false);
 
   useEffect(() => {
     fetch("/api/setting", { cache: "no-store" })
@@ -48,6 +50,59 @@ export default function HomePage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const musicUrl = settings.media.music || defaults.media.music || "/music.mp3";
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    audio.loop = true;
+    audio.preload = "auto";
+
+    const tryStartMusic = () => {
+      if (musicStartedRef.current || !audio.paused) return;
+      musicStartedRef.current = true;
+      audio.play()
+        .then(() => setMusicPlaying(true))
+        .catch(() => {
+          musicStartedRef.current = false;
+          setMusicPlaying(false);
+        });
+    };
+
+    tryStartMusic();
+
+    // Modern browsers may block unmuted autoplay. Start the music on the
+    // visitor's first interaction when that happens.
+    const startAfterInteraction = () => tryStartMusic();
+    window.addEventListener("pointerdown", startAfterInteraction, { once: true, passive: true });
+    window.addEventListener("keydown", startAfterInteraction, { once: true });
+
+    return () => {
+      window.removeEventListener("pointerdown", startAfterInteraction);
+      window.removeEventListener("keydown", startAfterInteraction);
+    };
+  }, [musicUrl]);
+
+  const toggleMusic = async () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (audio.paused) {
+      try {
+        await audio.play();
+        musicStartedRef.current = true;
+        setMusicPlaying(true);
+      } catch {
+        setMusicPlaying(false);
+      }
+    } else {
+      audio.pause();
+      musicStartedRef.current = true;
+      setMusicPlaying(false);
+    }
+  };
+
   const profile = settings.profile;
   const media = settings.media;
   const socials = settings.socials || {};
@@ -63,6 +118,18 @@ export default function HomePage() {
 
   return (
     <main className="site">
+      <audio
+        ref={audioRef}
+        src={musicUrl}
+        autoPlay
+        loop
+        preload="auto"
+        onPlay={() => setMusicPlaying(true)}
+        onPause={() => setMusicPlaying(false)}
+        onError={() => setMusicPlaying(false)}
+        aria-label="Background music"
+      />
+
       <video className="background-video" autoPlay loop muted playsInline preload="metadata" aria-hidden="true">
         <source src={media.backgroundVideo || "/background.mp4"} type="video/mp4" />
       </video>
@@ -142,7 +209,10 @@ export default function HomePage() {
       <footer>
         <div className="footer-logo">VEXDOU</div>
         <span>© 2026 VEXDOU. ALL RIGHTS RESERVED.</span>
-        <button className="sound-button" onClick={() => setMuted((value) => !value)}>{muted ? "SOUND OFF" : "SOUND ON"}</button>
+        <button className={musicPlaying ? "sound-button music-control playing" : "sound-button music-control"} onClick={toggleMusic} aria-label={musicPlaying ? "Pause music" : "Play music"} aria-pressed={musicPlaying}>
+          <span className="music-icon" aria-hidden="true">{musicPlaying ? "Ⅱ" : "▶"}</span>
+          <span>{musicPlaying ? "PAUSE MUSIC" : "PLAY MUSIC"}</span>
+        </button>
       </footer>
 
       <div className={loading ? "loader visible" : "loader"}><div className="loader-logo">V</div><div className="loader-line" /></div>

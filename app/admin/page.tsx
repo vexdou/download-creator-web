@@ -3,121 +3,26 @@
 import { FormEvent, useEffect, useState } from "react";
 
 type TextItem = { id: string; title: string; text: string };
-type Content = {
-  profile: { name: string; description: string; photo: string };
-  about: string;
-  media: { backgroundVideo: string; music: string };
-  socials: Record<string, string>;
-  notifications: { title: string; message: string; enabled: boolean };
-  customTexts: TextItem[];
-};
-
-const empty: Content = {
-  profile: { name: "Vexdou", description: "Building ideas into reality.", photo: "/profile.jpg" },
-  about: "Welcome to my personal digital space.",
-  media: { backgroundVideo: "/background.mp4", music: "/music.mp3" },
-  socials: {
-    tiktok: "https://www.tiktok.com/@Vexdou",
-    instagram: "https://www.instagram.com/Vexdou/",
-    whatsapp: "https://wa.me/14504066880",
-    telegram: "https://t.me/Vexdou"
-  },
-  notifications: { title: "", message: "", enabled: false },
-  customTexts: []
-};
-
-const socials = ["tiktok", "instagram", "whatsapp", "telegram", "youtube", "github"];
+type Content = { profile: { name: string; description: string; photo: string; photos?: string[] }; about: string; media: { backgroundVideo: string; music: string }; socials: Record<string, string>; notifications: { title: string; message: string; enabled: boolean }; customTexts: TextItem[] };
+const empty: Content = { profile: { name: "Vexdou", description: "Building ideas into reality.", photo: "/profile.jpg", photos: [] }, about: "Welcome to my personal digital space.", media: { backgroundVideo: "/background.mp4", music: "/music.mp3" }, socials: { tiktok: "https://www.tiktok.com/@Vexdou", instagram: "https://www.instagram.com/Vexdou/", whatsapp: "https://wa.me/14504066880", telegram: "https://t.me/Vexdou" }, notifications: { title: "", message: "", enabled: false }, customTexts: [] };
+const socials = ["tiktok", "instagram", "telegram", "whatsapp", "youtube", "github"];
 
 export default function AdminPage() {
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [checking, setChecking] = useState(true);
-  const [password, setPassword] = useState("");
-  const [content, setContent] = useState<Content>(empty);
-  const [newTitle, setNewTitle] = useState("");
-  const [newText, setNewText] = useState("");
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
-  const [active, setActive] = useState("Content");
-
-  async function load() {
-    try {
-      const response = await fetch("/api/setting", { cache: "no-store" });
-      if (response.ok) setContent(await response.json());
-    } catch {}
-  }
-
-  useEffect(() => { load().finally(() => setChecking(false)); }, []);
-
-  async function login(event: FormEvent) {
-    event.preventDefault(); setError("");
-    const response = await fetch("/api/admin/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password }) });
-    const data = await response.json();
-    if (!response.ok) { setError(data.error || "Login failed."); return; }
-    setPassword(""); setLoggedIn(true); await load();
-  }
-
-  async function save(next: Partial<Content>) {
-    setError(""); setMessage("");
-    const response = await fetch("/api/setting", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(next) });
-    const data = await response.json();
-    if (!response.ok) { setError(data.error || "Could not save."); return; }
-    setMessage("Saved. GitHub commit created automatically."); await load();
-  }
-
-  async function logout() {
-    await fetch("/api/admin/logout", { method: "POST" }).catch(() => {});
-    setLoggedIn(false);
-  }
-
-  if (checking) return <main className="admin-page"><div className="card"><h1>Loading…</h1></div></main>;
-
-  if (!loggedIn) return (
-    <main className="admin-page"><form className="card login" onSubmit={login}>
-      <div className="logo">V</div><small>VEXDOU ADMIN</small><h1>Control center</h1>
-      <p>Manage website text, social links, announcements and custom sections.</p>
-      <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Admin password" autoComplete="current-password" required />
-      {error && <div className="error">{error}</div>}<button>LOGIN →</button><a href="/">← Website</a>
-    </form></main>
-  );
-
-  return <main className="dashboard">
-    <aside><div className="brand"><b>V</b><strong>VEXDOU<small>ADMIN PANEL</small></strong></div>
-      {[
-        ["Content", "✦"], ["Social Links", "◎"], ["Media", "▶"], ["Announcement", "◇"], ["Custom Text", "+"]
-      ].map(([name, icon]) => <button key={name} className={active === name ? "active" : ""} onClick={() => { setActive(name); setMessage(""); setError(""); }}>{icon} {name}</button>)}
-      <div className="bottom"><a href="/">← View Website</a><button onClick={logout}>Logout</button></div>
-    </aside>
-
-    <section className="main"><header><div><small>VEXDOU / ADMIN</small><h1>{active}</h1></div><span>GitHub CMS</span></header>
-      {message && <div className="success">✓ {message}</div>}{error && <div className="error">⚠ {error}</div>}
-
-      {active === "Content" && <div className="grid">
-        <div className="card"><small>PROFILE</small><h2>Website text</h2>
-          <label>Name<input value={content.profile.name} onChange={(e) => setContent({ ...content, profile: { ...content.profile, name: e.target.value } })} /></label>
-          <label>Description<textarea value={content.profile.description} onChange={(e) => setContent({ ...content, profile: { ...content.profile, description: e.target.value } })} /></label>
-          <label>About<textarea rows={8} value={content.about} onChange={(e) => setContent({ ...content, about: e.target.value })} /></label>
-          <button className="save" onClick={() => save({ profile: content.profile, about: content.about })}>SAVE TEXT</button>
-        </div>
-        <div className="card"><small>ANNOUNCEMENT</small><h2>Public message</h2>
-          <label>Title<input value={content.notifications.title} onChange={(e) => setContent({ ...content, notifications: { ...content.notifications, title: e.target.value } })} /></label>
-          <label>Message<textarea rows={7} value={content.notifications.message} onChange={(e) => setContent({ ...content, notifications: { ...content.notifications, message: e.target.value } })} /></label>
-          <label className="check"><input type="checkbox" checked={content.notifications.enabled} onChange={(e) => setContent({ ...content, notifications: { ...content.notifications, enabled: e.target.checked } })} /> Show announcement</label>
-          <button className="save" onClick={() => save({ notifications: content.notifications })}>SAVE ANNOUNCEMENT</button>
-        </div>
-      </div>}
-
-      {active === "Social Links" && <div className="card"><small>SOCIAL MEDIA</small><h2>Automatic profile links</h2><p className="muted">The supplied usernames are already converted into clickable profile links.</p>
-        {socials.map((key) => <label key={key}>{key.toUpperCase()}<input value={content.socials[key] || ""} placeholder="https://..." onChange={(e) => setContent({ ...content, socials: { ...content.socials, [key]: e.target.value } })} /></label>)}
-        <button className="save" onClick={() => save({ socials: content.socials })}>SAVE SOCIALS</button>
-      </div>}
-
-      {active === "Media" && <div className="card"><small>MEDIA</small><h2>Background media</h2><label>Background video URL<input value={content.media.backgroundVideo} onChange={(e) => setContent({ ...content, media: { ...content.media, backgroundVideo: e.target.value } })} /></label><label>Music URL<input value={content.media.music} onChange={(e) => setContent({ ...content, media: { ...content.media, music: e.target.value } })} /></label><button className="save" onClick={() => save({ media: content.media })}>SAVE MEDIA</button></div>}
-
-      {active === "Announcement" && <div className="card"><small>ANNOUNCEMENT</small><h2>Quick publish</h2><p className="muted">Publish or hide the message shown on the homepage.</p><button className="save" onClick={() => save({ notifications: { ...content.notifications, enabled: true } })}>PUBLISH</button><button className="dark" onClick={() => save({ notifications: { ...content.notifications, enabled: false } })}>HIDE</button></div>}
-
-      {active === "Custom Text" && <div className="grid"><div className="card"><small>ADD TEXT</small><h2>New section</h2><label>Title<input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Optional title" /></label><label>Text<textarea rows={10} value={newText} onChange={(e) => setNewText(e.target.value)} placeholder="Write anything you want to show on the website…" /></label><button className="save" onClick={async () => { if (!newText.trim()) return; const item = { id: `${Date.now()}`, title: newTitle, text: newText }; const next = [...content.customTexts, item]; setNewTitle(""); setNewText(""); await save({ customTexts: next }); }}>ADD & PUBLISH</button></div><div className="card"><small>EXISTING TEXT</small><h2>{content.customTexts.length} sections</h2>{content.customTexts.map((item) => <div className="text-row" key={item.id}><div><b>{item.title || "Untitled"}</b><p>{item.text}</p></div><button className="delete" onClick={() => save({ customTexts: content.customTexts.filter((x) => x.id !== item.id) })}>DELETE</button></div>)}</div></div>}
-    </section>
-
-    <style jsx global>{`*{box-sizing:border-box}body{margin:0;background:#050507;color:#fff;font-family:Inter,Arial,sans-serif}button,input,textarea{font:inherit}button{cursor:pointer}.admin-page{min-height:100vh;display:grid;place-items:center;padding:20px;background:radial-gradient(circle at 20% 20%,rgba(124,58,237,.18),transparent 35%),#050507}.card{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.09);border-radius:22px;padding:28px;box-shadow:0 25px 80px rgba(0,0,0,.25)}.login{width:min(430px,100%)}.logo,.brand>b{display:grid;place-items:center;background:linear-gradient(135deg,#8b5cf6,#22d3ee);font-weight:900}.logo{width:55px;height:55px;border-radius:16px;margin-bottom:25px}.login small,header small,.card>small{color:#a78bfa;letter-spacing:2px;font-weight:800;font-size:9px}.login h1{font-size:38px;margin:10px 0}.login p,.muted{color:rgba(255,255,255,.45);line-height:1.7;font-size:13px}.card input:not([type=checkbox]),.card textarea,.login input{width:100%;margin-top:7px;padding:13px 14px;border:1px solid rgba(255,255,255,.09);border-radius:12px;background:rgba(0,0,0,.25);color:#fff;outline:none}.card textarea{resize:vertical}.card label{display:block;margin:17px 0;color:rgba(255,255,255,.55);font-size:10px}.login button,.save{width:100%;border:0;border-radius:12px;padding:14px;background:#fff;color:#050507;font-weight:900;margin-top:15px}.login a{display:block;text-align:center;margin-top:18px;color:#777;font-size:11px}.error,.success{padding:12px 14px;border-radius:12px;margin:12px 0;font-size:11px}.error{background:rgba(239,68,68,.1);color:#fca5a5}.success{background:rgba(34,197,94,.1);color:#86efac}.dashboard{min-height:100vh;display:flex;background:#050507}.dashboard aside{width:235px;position:fixed;inset:0 auto 0 0;padding:25px 15px;border-right:1px solid rgba(255,255,255,.07);background:#08080c;display:flex;flex-direction:column}.brand{display:flex;align-items:center;gap:10px;padding:5px 10px 30px}.brand>b{width:38px;height:38px;border-radius:11px}.brand strong{font-size:12px;letter-spacing:3px}.brand small{display:block;color:#555;font-size:7px;letter-spacing:2px;margin-top:4px}.dashboard aside>button,.bottom button,.bottom a{border:0;background:transparent;color:#888;text-align:left;padding:12px;border-radius:10px;font-size:11px;text-decoration:none}.dashboard aside>button:hover,.dashboard aside>button.active{background:rgba(139,92,246,.12);color:#fff}.bottom{margin-top:auto;display:flex;flex-direction:column}.main{margin-left:235px;width:calc(100% - 235px);padding:35px 45px 60px}.main header{display:flex;justify-content:space-between;align-items:center;margin-bottom:25px}.main header h1{font-size:35px;margin:8px 0}.main header>span{font-size:10px;color:#777}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.check{display:flex!important;align-items:center;gap:8px}.check input{width:auto!important;margin:0!important}.dark{width:100%;border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:13px;background:transparent;color:#aaa;margin-top:10px}.text-row{display:flex;justify-content:space-between;gap:15px;padding:15px 0;border-bottom:1px solid rgba(255,255,255,.08)}.text-row p{color:#888;font-size:12px;white-space:pre-wrap}.delete{height:35px;border:1px solid rgba(239,68,68,.2);border-radius:9px;background:transparent;color:#fca5a5;font-size:9px;padding:0 10px}.card h2{margin:8px 0 20px;font-size:20px}@media(max-width:800px){.dashboard aside{width:70px;padding:15px 8px}.brand strong,.dashboard aside>button:not(.active){font-size:0}.brand strong small{display:none}.dashboard aside>button{font-size:0;text-align:center}.dashboard aside>button:first-letter{font-size:18px}.main{margin-left:70px;width:calc(100% - 70px);padding:25px 15px}.grid{grid-template-columns:1fr}.brand>b{margin:auto}.main header h1{font-size:28px}}`}</style>
-  </main>;
+  const [loggedIn,setLoggedIn]=useState(false),[checking,setChecking]=useState(true),[password,setPassword]=useState(""),[content,setContent]=useState<Content>(empty),[newTitle,setNewTitle]=useState(""),[newText,setNewText]=useState(""),[error,setError]=useState(""),[message,setMessage]=useState(""),[active,setActive]=useState("Content");
+  async function load(){try{const r=await fetch("/api/setting",{cache:"no-store"});if(r.ok){const d=await r.json();setContent({...empty,...d,profile:{...empty.profile,...(d.profile||{}),photos:Array.isArray(d.profile?.photos)?d.profile.photos:[]},media:{...empty.media,...(d.media||{})},notifications:{...empty.notifications,...(d.notifications||{})},socials:{...empty.socials,...(d.socials||{})},customTexts:Array.isArray(d.customTexts)?d.customTexts:[]})}}catch{}}
+  useEffect(()=>{load().finally(()=>setChecking(false))},[]);
+  async function login(e:FormEvent){e.preventDefault();setError("");const r=await fetch("/api/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password})});const d=await r.json();if(!r.ok){setError(d.error||"Login failed.");return}setPassword("");setLoggedIn(true);await load()}
+  async function save(next:Partial<Content>){setError("");setMessage("");const r=await fetch("/api/setting",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(next)});const d=await r.json();if(!r.ok){setError(d.error||"Could not save.");return}setMessage("Saved. GitHub commit created automatically.");await load()}
+  async function logout(){await fetch("/api/admin/logout",{method:"POST"}).catch(()=>{});setLoggedIn(false)}
+  if(checking)return <main className="admin-page"><div className="card"><h1>Loading…</h1></div></main>;
+  if(!loggedIn)return <main className="admin-page"><form className="card login" onSubmit={login}><div className="logo">V</div><small>VEXDOU ADMIN</small><h1>Control center</h1><p>Manage website text, photos, social links, media and announcements.</p><input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Admin password" autoComplete="current-password" required/>{error&&<div className="error">{error}</div>}<button>LOGIN →</button><a href="/">← Website</a></form></main>;
+  return <main className="dashboard"><aside><div className="brand"><b>V</b><strong>VEXDOU<small>ADMIN PANEL</small></strong></div>{[["Content","✦"],["Profile Photos","◉"],["Social Links","◎"],["Media","▶"],["Announcement","◇"],["Custom Text","+"]].map(([name,icon])=><button key={name} className={active===name?"active":""} onClick={()=>{setActive(name);setMessage("");setError("")}}>{icon} {name}</button>)}<div className="bottom"><a href="/">← View Website</a><button onClick={logout}>Logout</button></div></aside>
+  <section className="main"><header><div><small>VEXDOU / ADMIN</small><h1>{active}</h1></div><span>GitHub CMS</span></header>{message&&<div className="success">✓ {message}</div>}{error&&<div className="error">⚠ {error}</div>}
+  {active==="Content"&&<div className="grid"><div className="card"><small>PROFILE</small><h2>Website text</h2><label>Name<input value={content.profile.name} onChange={e=>setContent({...content,profile:{...content.profile,name:e.target.value}})}/></label><label>Description<textarea value={content.profile.description} onChange={e=>setContent({...content,profile:{...content.profile,description:e.target.value}})}/></label><label>About<textarea rows={8} value={content.about} onChange={e=>setContent({...content,about:e.target.value})}/></label><button className="save" onClick={()=>save({profile:content.profile,about:content.about})}>SAVE TEXT</button></div><div className="card"><small>ANNOUNCEMENT</small><h2>Public message</h2><label>Title<input value={content.notifications.title} onChange={e=>setContent({...content,notifications:{...content.notifications,title:e.target.value}})}/></label><label>Message<textarea rows={7} value={content.notifications.message} onChange={e=>setContent({...content,notifications:{...content.notifications,message:e.target.value}})}/></label><label className="check"><input type="checkbox" checked={content.notifications.enabled} onChange={e=>setContent({...content,notifications:{...content.notifications,enabled:e.target.checked}})}/> Show announcement</label><button className="save" onClick={()=>save({notifications:content.notifications})}>SAVE ANNOUNCEMENT</button></div></div>}
+  {active==="Profile Photos"&&<div className="card"><small>PROFILE CYCLE</small><h2>3 rotating photos</h2><p className="muted">Photo 1 is the main profile image. Add two more images below; the circle will automatically cycle through all three.</p><label>Photo 1 — Main<input value={content.profile.photo} onChange={e=>setContent({...content,profile:{...content.profile,photo:e.target.value}})} placeholder="/profile.jpg or image URL"/></label><label>Photo 2 — Add image<input value={content.profile.photos?.[0]||""} onChange={e=>setContent({...content,profile:{...content.profile,photos:[e.target.value,content.profile.photos?.[1]||""]}})} placeholder="/profile1.jpg or image URL"/></label><label>Photo 3 — Add image<input value={content.profile.photos?.[1]||""} onChange={e=>setContent({...content,profile:{...content.profile,photos:[content.profile.photos?.[0]||"",e.target.value]}})} placeholder="/profile2.jpg or image URL"/></label><button className="save" onClick={()=>save({profile:content.profile})}>SAVE 3 PHOTOS</button></div>}
+  {active==="Social Links"&&<div className="card"><small>SOCIAL MEDIA</small><h2>Platform links + official icons</h2><p className="muted">Homepage uses dedicated platform icons for TikTok, Instagram, Telegram and WhatsApp.</p>{socials.map(key=><label key={key}>{key.toUpperCase()}<input value={content.socials[key]||""} placeholder="https://..." onChange={e=>setContent({...content,socials:{...content.socials,[key]:e.target.value}})}/></label>)}<button className="save" onClick={()=>save({socials:content.socials})}>SAVE SOCIALS</button></div>}
+  {active==="Media"&&<div className="card"><small>MEDIA</small><h2>Background media</h2><label>Background video URL<input value={content.media.backgroundVideo} onChange={e=>setContent({...content,media:{...content.media,backgroundVideo:e.target.value}})}/></label><label>Music URL<input value={content.media.music} onChange={e=>setContent({...content,media:{...content.media,music:e.target.value}})}/></label><button className="save" onClick={()=>save({media:content.media})}>SAVE MEDIA</button></div>}
+  {active==="Announcement"&&<div className="card"><small>ANNOUNCEMENT</small><h2>Quick publish</h2><p className="muted">Publish or hide the message shown on the homepage.</p><button className="save" onClick={()=>save({notifications:{...content.notifications,enabled:true}})}>PUBLISH</button><button className="dark" onClick={()=>save({notifications:{...content.notifications,enabled:false}})}>HIDE</button></div>}
+  {active==="Custom Text"&&<div className="grid"><div className="card"><small>ADD TEXT</small><h2>New section</h2><label>Title<input value={newTitle} onChange={e=>setNewTitle(e.target.value)} placeholder="Optional title"/></label><label>Text<textarea rows={10} value={newText} onChange={e=>setNewText(e.target.value)} placeholder="Write anything you want to show…"/></label><button className="save" onClick={async()=>{if(!newText.trim())return;const item={id:`${Date.now()}`,title:newTitle,text:newText};setNewTitle("");setNewText("");await save({customTexts:[...content.customTexts,item]})}}>ADD & PUBLISH</button></div><div className="card"><small>EXISTING TEXT</small><h2>{content.customTexts.length} sections</h2>{content.customTexts.map(item=><div className="text-row" key={item.id}><div><b>{item.title||"Untitled"}</b><p>{item.text}</p></div><button className="delete" onClick={()=>save({customTexts:content.customTexts.filter(x=>x.id!==item.id)})}>DELETE</button></div>)}</div></div>}
+  </section><style jsx global>{`*{box-sizing:border-box}body{margin:0;background:#050507;color:#fff;font-family:Inter,Arial,sans-serif}button,input,textarea{font:inherit}button{cursor:pointer}.admin-page{min-height:100vh;display:grid;place-items:center;padding:20px;background:radial-gradient(circle at 20% 20%,rgba(124,58,237,.18),transparent 35%),#050507}.card{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.09);border-radius:22px;padding:28px;box-shadow:0 25px 80px rgba(0,0,0,.25)}.login{width:min(430px,100%)}.logo,.brand>b{display:grid;place-items:center;background:linear-gradient(135deg,#8b5cf6,#22d3ee);font-weight:900}.logo{width:55px;height:55px;border-radius:16px;margin-bottom:25px}.login small,header small,.card>small{color:#a78bfa;letter-spacing:2px;font-weight:800;font-size:9px}.login h1{font-size:38px;margin:10px 0}.login p,.muted{color:rgba(255,255,255,.45);line-height:1.7;font-size:13px}.card input:not([type=checkbox]),.card textarea,.login input{width:100%;margin-top:7px;padding:13px 14px;border:1px solid rgba(255,255,255,.09);border-radius:12px;background:rgba(0,0,0,.25);color:#fff;outline:none}.card textarea{resize:vertical}.card label{display:block;margin:17px 0;color:rgba(255,255,255,.55);font-size:10px}.login button,.save{width:100%;border:0;border-radius:12px;padding:14px;background:#fff;color:#050507;font-weight:900;margin-top:15px}.login a{display:block;text-align:center;margin-top:18px;color:#777;font-size:11px}.error,.success{padding:12px 14px;border-radius:12px;margin:12px 0;font-size:11px}.error{background:rgba(239,68,68,.1);color:#fca5a5}.success{background:rgba(34,197,94,.1);color:#86efac}.dashboard{min-height:100vh;display:flex;background:#050507}.dashboard aside{width:235px;position:fixed;inset:0 auto 0 0;padding:25px 15px;border-right:1px solid rgba(255,255,255,.07);background:#08080c;display:flex;flex-direction:column}.brand{display:flex;align-items:center;gap:10px;padding:5px 10px 30px}.brand>b{width:38px;height:38px;border-radius:11px}.brand strong{font-size:12px;letter-spacing:3px}.brand small{display:block;color:#555;font-size:7px;letter-spacing:2px;margin-top:4px}.dashboard aside>button,.bottom button,.bottom a{border:0;background:transparent;color:#888;text-align:left;padding:12px;border-radius:10px;font-size:11px;text-decoration:none}.dashboard aside>button:hover,.dashboard aside>button.active{background:rgba(139,92,246,.12);color:#fff}.bottom{margin-top:auto;display:flex;flex-direction:column}.main{margin-left:235px;width:calc(100% - 235px);padding:35px 45px 60px}.main header{display:flex;justify-content:space-between;align-items:center;margin-bottom:25px}.main header h1{font-size:35px;margin:8px 0}.main header>span{font-size:10px;color:#777}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.check{display:flex!important;align-items:center;gap:8px}.check input{width:auto!important;margin:0!important}.dark{width:100%;border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:13px;background:transparent;color:#aaa;margin-top:10px}.text-row{display:flex;justify-content:space-between;gap:15px;padding:15px 0;border-bottom:1px solid rgba(255,255,255,.08)}.text-row p{color:#888;font-size:12px;white-space:pre-wrap}.delete{height:35px;border:1px solid rgba(239,68,68,.2);border-radius:9px;background:transparent;color:#fca5a5;font-size:9px;padding:0 10px}.card h2{margin:8px 0 20px;font-size:20px}@media(max-width:800px){.dashboard aside{width:70px;padding:15px 8px}.brand strong,.dashboard aside>button:not(.active){font-size:0}.brand strong small{display:none}.dashboard aside>button{font-size:0;text-align:center}.dashboard aside>button:first-letter{font-size:18px}.main{margin-left:70px;width:calc(100% - 70px);padding:25px 15px}.grid{grid-template-columns:1fr}.brand>b{margin:auto}.main header h1{font-size:28px}}`}</style></main>;
 }

@@ -2,280 +2,122 @@
 
 import { FormEvent, useEffect, useState } from "react";
 
-const menu = ["Overview", "Content", "Social Links", "Media", "Notifications", "Settings"];
+type TextItem = { id: string; title: string; text: string };
+type Content = {
+  profile: { name: string; description: string; photo: string };
+  about: string;
+  media: { backgroundVideo: string; music: string };
+  socials: Record<string, string>;
+  notifications: { title: string; message: string; enabled: boolean };
+  customTexts: TextItem[];
+};
+
+const empty: Content = {
+  profile: { name: "Vexdou", description: "Building ideas into reality.", photo: "/profile.jpg" },
+  about: "Welcome to my personal digital space.",
+  media: { backgroundVideo: "/background.mp4", music: "/music.mp3" },
+  socials: {
+    tiktok: "https://www.tiktok.com/@Vexdou",
+    instagram: "https://www.instagram.com/Vexdou/",
+    whatsapp: "https://wa.me/14504066880",
+    telegram: "https://t.me/Vexdou"
+  },
+  notifications: { title: "", message: "", enabled: false },
+  customTexts: []
+};
+
+const socials = ["tiktok", "instagram", "whatsapp", "telegram", "youtube", "github"];
 
 export default function AdminPage() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [checking, setChecking] = useState(true);
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [content, setContent] = useState<Content>(empty);
+  const [newTitle, setNewTitle] = useState("");
+  const [newText, setNewText] = useState("");
   const [error, setError] = useState("");
-  const [active, setActive] = useState("Overview");
   const [message, setMessage] = useState("");
+  const [active, setActive] = useState("Content");
 
-  useEffect(() => {
-    fetch("/api/setting", { cache: "no-store" })
-      .catch(() => {})
-      .finally(() => setChecking(false));
-  }, []);
-
-  async function login(event?: FormEvent) {
-    event?.preventDefault();
-    setError("");
-    setMessage("");
-
+  async function load() {
     try {
-      const response = await fetch("/api/admin/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-      });
-      const data = await response.json();
+      const response = await fetch("/api/setting", { cache: "no-store" });
+      if (response.ok) setContent(await response.json());
+    } catch {}
+  }
 
-      if (!response.ok) {
-        setError(data.error || "Login failed.");
-        return;
-      }
+  useEffect(() => { load().finally(() => setChecking(false)); }, []);
 
-      setPassword("");
-      setLoggedIn(true);
-    } catch {
-      setError("Unable to connect to the server.");
-    }
+  async function login(event: FormEvent) {
+    event.preventDefault(); setError("");
+    const response = await fetch("/api/admin/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password }) });
+    const data = await response.json();
+    if (!response.ok) { setError(data.error || "Login failed."); return; }
+    setPassword(""); setLoggedIn(true); await load();
+  }
+
+  async function save(next: Partial<Content>) {
+    setError(""); setMessage("");
+    const response = await fetch("/api/setting", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(next) });
+    const data = await response.json();
+    if (!response.ok) { setError(data.error || "Could not save."); return; }
+    setMessage("Saved. GitHub commit created automatically."); await load();
   }
 
   async function logout() {
     await fetch("/api/admin/logout", { method: "POST" }).catch(() => {});
     setLoggedIn(false);
-    setActive("Overview");
   }
 
-  async function saveSettings(payload: Record<string, unknown>) {
-    setError("");
-    setMessage("");
+  if (checking) return <main className="admin-page"><div className="card"><h1>Loading…</h1></div></main>;
 
-    try {
-      const response = await fetch("/api/setting", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || "Could not save settings.");
-        return;
-      }
-
-      setMessage("Saved successfully.");
-    } catch {
-      setError("Unable to save settings.");
-    }
-  }
-
-  if (checking) {
-    return <main className="admin-login-page"><div className="login-card"><h1>Loading…</h1></div></main>;
-  }
-
-  if (!loggedIn) {
-    return (
-      <main className="admin-login-page">
-        <div className="admin-glow glow-one" />
-        <div className="admin-glow glow-two" />
-        <form className="login-card" onSubmit={login}>
-          <div className="login-logo">V</div>
-          <div className="login-small">VEXDOU ADMIN PANEL</div>
-          <h1>Welcome back.</h1>
-          <p>Enter your administrator password to access your dashboard.</p>
-
-          <div className="password-box">
-            <input
-              autoComplete="current-password"
-              type={showPassword ? "text" : "password"}
-              value={password}
-              maxLength={256}
-              onChange={(e) => { setPassword(e.target.value); setError(""); }}
-              placeholder="Enter password"
-              required
-            />
-            <button type="button" onClick={() => setShowPassword((v) => !v)}>
-              {showPassword ? "Hide" : "Show"}
-            </button>
-          </div>
-
-          {error && <div className="login-error">⚠ {error}</div>}
-
-          <button className="login-button" type="submit">
-            LOGIN <span>→</span>
-          </button>
-
-          <a href="/" className="back-home">← Back to website</a>
-        </form>
-      </main>
-    );
-  }
-
-  return (
-    <main className="dashboard">
-      <aside className="sidebar">
-        <div className="brand">
-          <div className="brand-icon">V</div>
-          <div><strong>VEXDOU</strong><small>ADMIN PANEL</small></div>
-        </div>
-        <div className="menu-title">MANAGEMENT</div>
-        <div className="sidebar-menu">
-          {menu.map((item) => (
-            <button
-              key={item}
-              className={active === item ? "menu-item active" : "menu-item"}
-              onClick={() => { setActive(item); setMessage(""); setError(""); }}
-            >
-              <span>
-                {item === "Overview" && "⌂"}
-                {item === "Content" && "✦"}
-                {item === "Social Links" && "◎"}
-                {item === "Media" && "▶"}
-                {item === "Notifications" && "♢"}
-                {item === "Settings" && "⚙"}
-              </span>
-              {item}
-            </button>
-          ))}
-        </div>
-        <div className="sidebar-bottom">
-          <a href="/">← View Website</a>
-          <button onClick={logout}>⇥ Logout</button>
-        </div>
-      </aside>
-
-      <section className="dashboard-main">
-        <header className="dashboard-header">
-          <div>
-            <div className="header-label">DASHBOARD</div>
-            <h1>{active}</h1>
-          </div>
-          <div className="admin-profile">
-            <img src="/profile.jpg" alt="Admin" />
-            <div><strong>Vexdou</strong><small>Administrator</small></div>
-          </div>
-        </header>
-
-        {message && <div className="success-message">{message}</div>}
-        {error && <div className="dashboard-error">{error}</div>}
-
-        {active === "Overview" && (
-          <>
-            <div className="welcome-banner">
-              <div>
-                <span>ADMINISTRATION</span>
-                <h2>Welcome to your<br />control center.</h2>
-                <p>Your API endpoints are protected by server-side authentication.</p>
-              </div>
-              <div className="banner-symbol">V</div>
-            </div>
-            <div className="stats-grid">
-              <div className="stat-card"><span>SECURITY</span><strong>PROTECTED</strong><small>Admin API authentication enabled</small></div>
-              <div className="stat-card"><span>DATABASE</span><strong>MongoDB</strong><small>Settings storage</small></div>
-              <div className="stat-card"><span>MEDIA</span><strong>Cloudinary</strong><small>Authenticated uploads</small></div>
-              <div className="stat-card"><span>STATUS</span><strong>ONLINE</strong><small>Dashboard ready</small></div>
-            </div>
-          </>
-        )}
-
-        {active === "Content" && (
-          <div className="content-page">
-            <div className="edit-card">
-              <span>PROFILE</span><h2>Personal information</h2>
-              <label>Display name<input id="displayName" defaultValue="Vexdou" maxLength={80} /></label>
-              <label>Short description<textarea id="shortDescription" defaultValue="Building ideas into reality." maxLength={300} /></label>
-              <button className="save-button" onClick={() => {
-                const name = (document.getElementById("displayName") as HTMLInputElement).value;
-                const description = (document.getElementById("shortDescription") as HTMLTextAreaElement).value;
-                saveSettings({ profile: { name, description, photo: "/profile.jpg" } });
-              }}>SAVE CHANGES</button>
-            </div>
-            <div className="edit-card">
-              <span>ABOUT</span><h2>About me</h2>
-              <label>About text<textarea id="aboutText" rows={7} defaultValue="Welcome to my personal digital space. I enjoy technology, creative projects and building useful digital experiences." maxLength={5000} /></label>
-              <button className="save-button" onClick={() => {
-                const about = (document.getElementById("aboutText") as HTMLTextAreaElement).value;
-                saveSettings({ about });
-              }}>UPDATE ABOUT</button>
-            </div>
-          </div>
-        )}
-
-        {active === "Social Links" && (
-          <div className="content-page">
-            {["TikTok","Instagram","Telegram","WhatsApp","YouTube","GitHub"].map((social) => (
-              <div className="social-edit" key={social}>
-                <strong>{social}</strong>
-                <input id={`social-${social}`} defaultValue="" placeholder="https://..." inputMode="url" maxLength={2048} />
-                <button onClick={() => {
-                  const value = (document.getElementById(`social-${social}`) as HTMLInputElement).value;
-                  const key = social.toLowerCase();
-                  saveSettings({ socials: { [key]: value } });
-                }}>SAVE</button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {active === "Media" && (
-          <div className="content-page">
-            <div className="media-card"><span>BACKGROUND VIDEO</span><h2>background.mp4</h2><p>Upload API is protected and limited to safe media types.</p></div>
-            <div className="media-card"><span>BACKGROUND MUSIC</span><h2>music.mp3</h2><p>Audio uploads are accepted through the authenticated upload endpoint.</p></div>
-            <div className="media-card"><span>PROFILE IMAGE</span><h2>profile.jpg</h2><p>Image uploads are accepted through the authenticated upload endpoint.</p></div>
-          </div>
-        )}
-
-        {active === "Notifications" && (
-          <div className="content-page">
-            <div className="notification-editor">
-              <span>ANNOUNCEMENT</span><h2>Create notification</h2>
-              <input id="notificationTitle" placeholder="Notification title" maxLength={160} />
-              <textarea id="notificationMessage" placeholder="Write your announcement..." rows={7} maxLength={2000} />
-              <button className="save-button" onClick={() => {
-                const title = (document.getElementById("notificationTitle") as HTMLInputElement).value;
-                const message = (document.getElementById("notificationMessage") as HTMLTextAreaElement).value;
-                saveSettings({ notifications: { title, message, enabled: true } });
-              }}>PUBLISH</button>
-            </div>
-          </div>
-        )}
-
-        {active === "Settings" && (
-          <div className="content-page">
-            <div className="settings-card"><div><span>WEBSITE</span><h2>Website status</h2><p>Public website remains available.</p></div><b>● LIVE</b></div>
-            <div className="settings-card"><div><span>SECURITY</span><h2>Server authentication</h2><p>Protected admin session cookie is enabled.</p></div><b>● ON</b></div>
-            <div className="settings-card"><div><span>UPLOADS</span><h2>Media validation</h2><p>Type and size restrictions are enabled.</p></div><b>● ON</b></div>
-          </div>
-        )}
-      </section>
-
-      <style jsx global>{`
-        *{box-sizing:border-box} body{margin:0;background:#050507;color:#fff;font-family:Inter,Arial,sans-serif}
-        button,input,textarea{font:inherit}button{cursor:pointer}
-        .admin-login-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:25px;background:radial-gradient(circle at 20% 20%,rgba(124,58,237,.18),transparent 35%),radial-gradient(circle at 80% 80%,rgba(34,211,238,.08),transparent 30%),#050507;position:relative;overflow:hidden}
-        .admin-glow{position:absolute;width:350px;height:350px;border-radius:50%;filter:blur(100px);pointer-events:none}.glow-one{background:rgba(124,58,237,.15);top:-150px;left:-100px}.glow-two{background:rgba(34,211,238,.08);right:-120px;bottom:-150px}
-        .login-card{width:100%;max-width:430px;padding:45px;border:1px solid rgba(255,255,255,.09);border-radius:30px;background:rgba(255,255,255,.035);backdrop-filter:blur(30px);box-shadow:0 30px 100px rgba(0,0,0,.45);position:relative;z-index:2}
-        .login-logo,.brand-icon{display:grid;place-items:center;background:linear-gradient(135deg,#8b5cf6,#22d3ee);font-weight:900}.login-logo{width:58px;height:58px;border-radius:18px;font-size:22px;margin-bottom:30px}.login-small,.header-label,.menu-title,.edit-card>span,.media-card>span,.notification-editor>span,.settings-card span{color:#a78bfa;font-size:9px;font-weight:800;letter-spacing:3px}
-        .login-card h1{margin:12px 0;font-size:38px;letter-spacing:-2px}.login-card>p{color:rgba(255,255,255,.4);line-height:1.7;font-size:13px;margin-bottom:28px}
-        .password-box{display:flex;gap:8px;padding:6px;border:1px solid rgba(255,255,255,.09);border-radius:15px;background:rgba(255,255,255,.035)}.password-box input{flex:1;min-width:0;padding:12px;border:0;outline:0;background:transparent;color:#fff}.password-box button{border:0;border-radius:10px;padding:0 12px;background:rgba(255,255,255,.06);color:rgba(255,255,255,.5)}
-        .login-error,.dashboard-error{margin-top:12px;padding:11px 14px;border-radius:12px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.18);color:#fca5a5;font-size:11px}.login-button{width:100%;margin-top:18px;padding:15px 20px;border:0;border-radius:14px;background:#fff;color:#050507;font-size:10px;font-weight:900;display:flex;justify-content:space-between}.back-home{display:block;margin-top:22px;text-align:center;color:rgba(255,255,255,.3);font-size:10px}
-        .dashboard{min-height:100vh;display:flex;background:#050507}.sidebar{width:250px;min-height:100vh;position:fixed;left:0;top:0;bottom:0;padding:25px 17px;border-right:1px solid rgba(255,255,255,.07);background:rgba(8,8,12,.85);backdrop-filter:blur(25px);display:flex;flex-direction:column;z-index:10}
-        .brand{display:flex;align-items:center;gap:12px;padding:5px 10px 35px}.brand-icon{width:38px;height:38px;border-radius:12px}.brand strong{display:block;font-size:12px;letter-spacing:3px}.brand small,.admin-profile small{display:block;margin-top:4px;color:rgba(255,255,255,.3);font-size:7px;letter-spacing:2px}
-        .menu-title{padding:0 12px 10px;color:rgba(255,255,255,.25);font-size:7px}.sidebar-menu{display:flex;flex-direction:column;gap:4px}.menu-item{width:100%;display:flex;align-items:center;gap:12px;padding:12px;border:0;border-radius:12px;background:transparent;color:rgba(255,255,255,.4);text-align:left;font-size:11px}.menu-item:hover,.menu-item.active{background:rgba(139,92,246,.1);color:#fff}.menu-item.active{box-shadow:inset 2px 0 0 #8b5cf6}.menu-item span{width:20px;text-align:center;font-size:15px}
-        .sidebar-bottom{margin-top:auto;display:flex;flex-direction:column;gap:4px}.sidebar-bottom a,.sidebar-bottom button{padding:12px;border:0;background:transparent;color:rgba(255,255,255,.3);text-align:left;font-size:10px}.sidebar-bottom a:hover,.sidebar-bottom button:hover{color:#fff}
-        .dashboard-main{width:calc(100% - 250px);margin-left:250px;padding:35px 45px 60px}.dashboard-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:35px}.dashboard-header h1{margin:7px 0 0;font-size:34px;letter-spacing:-2px}.admin-profile{display:flex;align-items:center;gap:10px}.admin-profile img{width:42px;height:42px;object-fit:cover;border-radius:13px}.admin-profile strong{font-size:11px}.success-message{padding:12px 15px;border:1px solid rgba(52,211,153,.2);background:rgba(52,211,153,.08);color:#6ee7b7;border-radius:12px;margin-bottom:12px;font-size:11px}
-        .welcome-banner{position:relative;overflow:hidden;min-height:210px;display:flex;align-items:center;justify-content:space-between;padding:35px;border:1px solid rgba(255,255,255,.08);border-radius:25px;background:radial-gradient(circle at 80% 30%,rgba(139,92,246,.16),transparent 35%),rgba(255,255,255,.025)}.welcome-banner span{color:#a78bfa;font-size:8px;letter-spacing:3px;font-weight:800}.welcome-banner h2{margin:13px 0;font-size:35px;line-height:1;letter-spacing:-2px}.welcome-banner p,.media-card p,.settings-card p{color:rgba(255,255,255,.38);font-size:11px}.banner-symbol{font-size:180px;font-weight:900;color:rgba(255,255,255,.025);transform:rotate(-10deg)}
-        .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:12px}.stat-card,.edit-card,.media-card,.notification-editor,.settings-card,.social-edit{padding:20px;border:1px solid rgba(255,255,255,.07);border-radius:18px;background:rgba(255,255,255,.025)}.stat-card span{display:block;color:rgba(255,255,255,.3);font-size:7px;letter-spacing:2px}.stat-card strong{display:block;margin-top:18px;font-size:20px}.stat-card small{display:block;margin-top:5px;color:rgba(255,255,255,.25);font-size:9px}
-        .content-page{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.edit-card h2,.notification-editor h2,.media-card h2,.settings-card h2{margin:8px 0 20px;font-size:20px}label{display:block;margin-top:16px;color:rgba(255,255,255,.35);font-size:9px}input,textarea{width:100%;margin-top:7px;padding:13px;border:1px solid rgba(255,255,255,.08);border-radius:11px;outline:0;background:rgba(255,255,255,.035);color:#fff;resize:vertical}input:focus,textarea:focus{border-color:rgba(139,92,246,.45)}.save-button{margin-top:20px;padding:12px 18px;border:0;border-radius:10px;background:#fff;color:#050507;font-size:9px;font-weight:900}
-        .social-edit{display:flex;align-items:center;gap:12px}.social-edit strong{min-width:80px;font-size:11px}.social-edit input{margin:0;flex:1}.social-edit button{border:0;border-radius:9px;padding:10px 12px;background:rgba(255,255,255,.07);color:#fff;font-size:8px}.media-card p{line-height:1.6}.settings-card{display:flex;align-items:center;justify-content:space-between}.settings-card+.settings-card{margin-top:10px}.settings-card b{color:#34d399;font-size:10px}
-        @media(max-width:1000px){.sidebar{width:210px}.dashboard-main{width:calc(100% - 210px);margin-left:210px;padding:25px}.stats-grid{grid-template-columns:repeat(2,1fr)}.content-page{grid-template-columns:1fr}}
-        @media(max-width:700px){.sidebar{width:68px;padding:15px 8px}.brand{justify-content:center;padding:5px 0 30px}.brand>div:last-child,.menu-title{display:none}.menu-item{justify-content:center;font-size:0}.menu-item span{font-size:17px}.sidebar-bottom a,.sidebar-bottom button{font-size:0;text-align:center}.dashboard-main{width:calc(100% - 68px);margin-left:68px;padding:20px 13px 40px}.dashboard-header h1{font-size:27px}.admin-profile div{display:none}.banner-symbol{display:none}.welcome-banner{padding:25px}.welcome-banner h2{font-size:27px}.stats-grid{grid-template-columns:1fr 1fr}.login-card{padding:30px 22px}.social-edit{flex-wrap:wrap}.social-edit input{min-width:calc(100% - 95px)}} 
-        @media(max-width:420px){.stats-grid{grid-template-columns:1fr}}
-      `}</style>
-    </main>
+  if (!loggedIn) return (
+    <main className="admin-page"><form className="card login" onSubmit={login}>
+      <div className="logo">V</div><small>VEXDOU ADMIN</small><h1>Control center</h1>
+      <p>Manage website text, social links, announcements and custom sections.</p>
+      <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Admin password" autoComplete="current-password" required />
+      {error && <div className="error">{error}</div>}<button>LOGIN →</button><a href="/">← Website</a>
+    </form></main>
   );
+
+  return <main className="dashboard">
+    <aside><div className="brand"><b>V</b><strong>VEXDOU<small>ADMIN PANEL</small></strong></div>
+      {[
+        ["Content", "✦"], ["Social Links", "◎"], ["Media", "▶"], ["Announcement", "◇"], ["Custom Text", "+"]
+      ].map(([name, icon]) => <button key={name} className={active === name ? "active" : ""} onClick={() => { setActive(name); setMessage(""); setError(""); }}>{icon} {name}</button>)}
+      <div className="bottom"><a href="/">← View Website</a><button onClick={logout}>Logout</button></div>
+    </aside>
+
+    <section className="main"><header><div><small>VEXDOU / ADMIN</small><h1>{active}</h1></div><span>GitHub CMS</span></header>
+      {message && <div className="success">✓ {message}</div>}{error && <div className="error">⚠ {error}</div>}
+
+      {active === "Content" && <div className="grid">
+        <div className="card"><small>PROFILE</small><h2>Website text</h2>
+          <label>Name<input value={content.profile.name} onChange={(e) => setContent({ ...content, profile: { ...content.profile, name: e.target.value } })} /></label>
+          <label>Description<textarea value={content.profile.description} onChange={(e) => setContent({ ...content, profile: { ...content.profile, description: e.target.value } })} /></label>
+          <label>About<textarea rows={8} value={content.about} onChange={(e) => setContent({ ...content, about: e.target.value })} /></label>
+          <button className="save" onClick={() => save({ profile: content.profile, about: content.about })}>SAVE TEXT</button>
+        </div>
+        <div className="card"><small>ANNOUNCEMENT</small><h2>Public message</h2>
+          <label>Title<input value={content.notifications.title} onChange={(e) => setContent({ ...content, notifications: { ...content.notifications, title: e.target.value } })} /></label>
+          <label>Message<textarea rows={7} value={content.notifications.message} onChange={(e) => setContent({ ...content, notifications: { ...content.notifications, message: e.target.value } })} /></label>
+          <label className="check"><input type="checkbox" checked={content.notifications.enabled} onChange={(e) => setContent({ ...content, notifications: { ...content.notifications, enabled: e.target.checked } })} /> Show announcement</label>
+          <button className="save" onClick={() => save({ notifications: content.notifications })}>SAVE ANNOUNCEMENT</button>
+        </div>
+      </div>}
+
+      {active === "Social Links" && <div className="card"><small>SOCIAL MEDIA</small><h2>Automatic profile links</h2><p className="muted">The supplied usernames are already converted into clickable profile links.</p>
+        {socials.map((key) => <label key={key}>{key.toUpperCase()}<input value={content.socials[key] || ""} placeholder="https://..." onChange={(e) => setContent({ ...content, socials: { ...content.socials, [key]: e.target.value } })} /></label>)}
+        <button className="save" onClick={() => save({ socials: content.socials })}>SAVE SOCIALS</button>
+      </div>}
+
+      {active === "Media" && <div className="card"><small>MEDIA</small><h2>Background media</h2><label>Background video URL<input value={content.media.backgroundVideo} onChange={(e) => setContent({ ...content, media: { ...content.media, backgroundVideo: e.target.value } })} /></label><label>Music URL<input value={content.media.music} onChange={(e) => setContent({ ...content, media: { ...content.media, music: e.target.value } })} /></label><button className="save" onClick={() => save({ media: content.media })}>SAVE MEDIA</button></div>}
+
+      {active === "Announcement" && <div className="card"><small>ANNOUNCEMENT</small><h2>Quick publish</h2><p className="muted">Publish or hide the message shown on the homepage.</p><button className="save" onClick={() => save({ notifications: { ...content.notifications, enabled: true } })}>PUBLISH</button><button className="dark" onClick={() => save({ notifications: { ...content.notifications, enabled: false } })}>HIDE</button></div>}
+
+      {active === "Custom Text" && <div className="grid"><div className="card"><small>ADD TEXT</small><h2>New section</h2><label>Title<input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Optional title" /></label><label>Text<textarea rows={10} value={newText} onChange={(e) => setNewText(e.target.value)} placeholder="Write anything you want to show on the website…" /></label><button className="save" onClick={async () => { if (!newText.trim()) return; const item = { id: `${Date.now()}`, title: newTitle, text: newText }; const next = [...content.customTexts, item]; setNewTitle(""); setNewText(""); await save({ customTexts: next }); }}>ADD & PUBLISH</button></div><div className="card"><small>EXISTING TEXT</small><h2>{content.customTexts.length} sections</h2>{content.customTexts.map((item) => <div className="text-row" key={item.id}><div><b>{item.title || "Untitled"}</b><p>{item.text}</p></div><button className="delete" onClick={() => save({ customTexts: content.customTexts.filter((x) => x.id !== item.id) })}>DELETE</button></div>)}</div></div>}
+    </section>
+
+    <style jsx global>{`*{box-sizing:border-box}body{margin:0;background:#050507;color:#fff;font-family:Inter,Arial,sans-serif}button,input,textarea{font:inherit}button{cursor:pointer}.admin-page{min-height:100vh;display:grid;place-items:center;padding:20px;background:radial-gradient(circle at 20% 20%,rgba(124,58,237,.18),transparent 35%),#050507}.card{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.09);border-radius:22px;padding:28px;box-shadow:0 25px 80px rgba(0,0,0,.25)}.login{width:min(430px,100%)}.logo,.brand>b{display:grid;place-items:center;background:linear-gradient(135deg,#8b5cf6,#22d3ee);font-weight:900}.logo{width:55px;height:55px;border-radius:16px;margin-bottom:25px}.login small,header small,.card>small{color:#a78bfa;letter-spacing:2px;font-weight:800;font-size:9px}.login h1{font-size:38px;margin:10px 0}.login p,.muted{color:rgba(255,255,255,.45);line-height:1.7;font-size:13px}.card input:not([type=checkbox]),.card textarea,.login input{width:100%;margin-top:7px;padding:13px 14px;border:1px solid rgba(255,255,255,.09);border-radius:12px;background:rgba(0,0,0,.25);color:#fff;outline:none}.card textarea{resize:vertical}.card label{display:block;margin:17px 0;color:rgba(255,255,255,.55);font-size:10px}.login button,.save{width:100%;border:0;border-radius:12px;padding:14px;background:#fff;color:#050507;font-weight:900;margin-top:15px}.login a{display:block;text-align:center;margin-top:18px;color:#777;font-size:11px}.error,.success{padding:12px 14px;border-radius:12px;margin:12px 0;font-size:11px}.error{background:rgba(239,68,68,.1);color:#fca5a5}.success{background:rgba(34,197,94,.1);color:#86efac}.dashboard{min-height:100vh;display:flex;background:#050507}.dashboard aside{width:235px;position:fixed;inset:0 auto 0 0;padding:25px 15px;border-right:1px solid rgba(255,255,255,.07);background:#08080c;display:flex;flex-direction:column}.brand{display:flex;align-items:center;gap:10px;padding:5px 10px 30px}.brand>b{width:38px;height:38px;border-radius:11px}.brand strong{font-size:12px;letter-spacing:3px}.brand small{display:block;color:#555;font-size:7px;letter-spacing:2px;margin-top:4px}.dashboard aside>button,.bottom button,.bottom a{border:0;background:transparent;color:#888;text-align:left;padding:12px;border-radius:10px;font-size:11px;text-decoration:none}.dashboard aside>button:hover,.dashboard aside>button.active{background:rgba(139,92,246,.12);color:#fff}.bottom{margin-top:auto;display:flex;flex-direction:column}.main{margin-left:235px;width:calc(100% - 235px);padding:35px 45px 60px}.main header{display:flex;justify-content:space-between;align-items:center;margin-bottom:25px}.main header h1{font-size:35px;margin:8px 0}.main header>span{font-size:10px;color:#777}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.check{display:flex!important;align-items:center;gap:8px}.check input{width:auto!important;margin:0!important}.dark{width:100%;border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:13px;background:transparent;color:#aaa;margin-top:10px}.text-row{display:flex;justify-content:space-between;gap:15px;padding:15px 0;border-bottom:1px solid rgba(255,255,255,.08)}.text-row p{color:#888;font-size:12px;white-space:pre-wrap}.delete{height:35px;border:1px solid rgba(239,68,68,.2);border-radius:9px;background:transparent;color:#fca5a5;font-size:9px;padding:0 10px}.card h2{margin:8px 0 20px;font-size:20px}@media(max-width:800px){.dashboard aside{width:70px;padding:15px 8px}.brand strong,.dashboard aside>button:not(.active){font-size:0}.brand strong small{display:none}.dashboard aside>button{font-size:0;text-align:center}.dashboard aside>button:first-letter{font-size:18px}.main{margin-left:70px;width:calc(100% - 70px);padding:25px 15px}.grid{grid-template-columns:1fr}.brand>b{margin:auto}.main header h1{font-size:28px}}`}</style>
+  </main>;
 }

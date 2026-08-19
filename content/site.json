@@ -2,7 +2,11 @@
   "profile": {
     "name": "Vexdou",
     "description": "Building ideas into reality.",
-    "photo": "/profile.jpg"
+    "photo": "/profile.jpg",
+    "photos": [
+      "/profile1.jpg",
+      "/profile2.jpg"
+    ]
   },
   "about": "Welcome to my personal digital space. I enjoy technology, creative projects and building useful digital experiences.\n\nCostumer@vexdou.space",
   "media": {

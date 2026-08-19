@@ -16,8 +16,8 @@
     "telegram": "https://t.me/Vexdou"
   },
   "notifications": {
-    "title": "",
-    "message": "",
+    "title": "Welcome To Vexdou",
+    "message": "Welcome to my personal digital space! Explore my latest projects, creative tools, and updates.",
     "enabled": true
   },
   "customTexts": []
